@@ -104,6 +104,37 @@
 			transition: opacity .2s;
 
 			--ViewControlSize: 30px;
+			
+			.ViewControl {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				width: var(--ViewControlSize);
+				height: var(--ViewControlSize);
+				min-width: var(--ViewControlSize);
+				min-height: var(--ViewControlSize);
+				padding: 0;
+				background-color: transparent;
+				border: none;
+				border-radius: 9999px;
+				cursor: pointer;
+				color: var(--spice-text);
+				transition: background-color 0.1s ease, transform 0.1s ease;
+
+				svg {
+					fill: currentColor;
+					flex-shrink: 0;
+				}
+
+				&:hover {
+					background-color: rgba(255, 255, 255, 0.1);
+					transform: scale(1.1);
+				}
+
+				&:active {
+					transform: scale(0.95);
+				}
+			}
 		}
 	}
 
