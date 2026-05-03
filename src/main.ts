@@ -75,6 +75,7 @@ async function init() {
 		// Try primary anchor first, then fallback
 		const cardAnchor = (
 			contentsContainer!.querySelector<HTMLDivElement>(CardInsertAnchor)
+			?? contentsContainer!.querySelector<HTMLDivElement>(CardInsertAnchorFallback)
 		)
 		console.log("[SpicyCardView] CheckForNowPlaying — anchor:", cardAnchor?.className ?? "NOT FOUND")
 		if (cardAnchor === null) return
