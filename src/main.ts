@@ -16,7 +16,8 @@ import CardView from './components/CardView'
 const RightSidebar = ".Root__right-sidebar"
 const ContentsContainer = "aside, section.main-buddyFeed-container"
 // Explicitly avoid matching the spicy-dynamic-bg canvas injected by other extensions
-const CardInsertAnchor = ".main-nowPlayingView-nowPlayingWidget, canvas"
+const CardInsertAnchor = ".main-nowPlayingView-nowPlayingWidget"
+const CardInsertAnchorFallback = ".main-nowPlayingView-coverArtContainer"
 
 const SpotifyCardViewQuery = ".main-nowPlayingView-section:not(:is(#BeautifulLyrics-CardView)):has(.main-nowPlayingView-lyricsTitle)"
 
@@ -179,4 +180,5 @@ async function init() {
 }
 
 init()
+
 
