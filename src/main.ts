@@ -12,14 +12,20 @@ import { CreateElement } from './utils/Shared'
 import { fetchAndAdaptLyrics } from './utils/fetchLyrics'
 import CardView from './components/CardView'
 
+// Load SpicyLyrics font
+const fontLink = document.createElement('link')
+fontLink.rel = 'stylesheet'
+fontLink.type = 'text/css'
+fontLink.href = 'https://fonts.spikerko.org/spicy-lyrics/source.css'
+document.head.appendChild(fontLink)
+
 // DOM selectors
 const RightSidebar = ".Root__right-sidebar"
 const ContentsContainer = "aside, section.main-buddyFeed-container"
 // Explicitly avoid matching the spicy-dynamic-bg canvas injected by other extensions
 const CardInsertAnchor = ".main-nowPlayingView-nowPlayingWidget"
 const CardInsertAnchorFallback = ".main-nowPlayingView-coverArtContainer"
-
-const SpotifyCardViewQuery = ".main-nowPlayingView-section:not(:is(#BeautifulLyrics-CardView)):has(.main-nowPlayingView-lyricsTitle)"
+const SpotifyCardViewQuery = ".main-nowPlayingView-section:not(:is(#SpicyCard-CardView)):has(.main-nowPlayingView-lyricsTitle)"
 
 const LoadingLyricsCard = `<div class="LoadingLyricsCard Loading"></div>`
 
@@ -77,7 +83,6 @@ async function init() {
 			contentsContainer!.querySelector<HTMLDivElement>(CardInsertAnchor)
 			?? contentsContainer!.querySelector<HTMLDivElement>(CardInsertAnchorFallback)
 		)
-		console.log("[SpicyCardView] CheckForNowPlaying — anchor:", cardAnchor?.className ?? "NOT FOUND")
 		if (cardAnchor === null) return
 
 		// Suppress Spotify's native lyrics card
@@ -95,7 +100,6 @@ async function init() {
 
 		const onSongChange = async () => {
 			nowPlayingViewMaid.Clean("Card")
-			console.log("[SpicyCardView] onSongChange — isStreamed:", isStreamedTrack(), "trackId:", getCurrentTrackId())
 
 			if (!isStreamedTrack()) return
 
@@ -107,11 +111,9 @@ async function init() {
 				CreateElement<HTMLDivElement>(LoadingLyricsCard), "Card"
 			)
 			cardAnchor.after(loadingCard)
-			console.log("[SpicyCardView] Loading card inserted after:", cardAnchor?.className)
 
 			const fetchId = ++currentFetchId
 			const lyrics = await fetchAndAdaptLyrics(trackId)
-			console.log("[SpicyCardView] Lyrics fetched:", lyrics ? lyrics.Type : "null")
 
 			// Discard stale results if track changed during fetch
 			if (fetchId !== currentFetchId) return
@@ -120,7 +122,6 @@ async function init() {
 
 			if (lyrics) {
 				nowPlayingViewMaid.Give(new CardView(cardAnchor, lyrics), "Card")
-				console.log("[SpicyCardView] CardView injected!")
 			}
 		}
 
@@ -181,5 +182,3 @@ async function init() {
 }
 
 init()
-
-

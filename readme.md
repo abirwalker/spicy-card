@@ -15,7 +15,7 @@ Made by [abirwalker](https://github.com/abirwalker).
 
 You can use the pre-compiled extension without building from source:
 
-1. Download the extension file from `Extension/Build/v1.0.1/spicy-card.js`
+1. Download the extension file from `Extension/Build/(latest version)/spicy-card.js`
 2. Locate your Spicetify extensions directory:
    - **Windows**: `%APPDATA%\spicetify\Extensions`
    - **macOS**: `~/.config/spicetify/Extensions`

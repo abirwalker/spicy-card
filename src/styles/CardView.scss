@@ -6,7 +6,7 @@
 	opacity: 0.35;
 }
 
-#BeautifulLyrics-CardView {
+#SpicyCard-CardView {
 	display: flex;
 	max-height: 340px;
 	background-color: var(--background-tinted-base) !important;
@@ -53,7 +53,7 @@
 
 		.ShowLyrics {
 			display: inline-flex;
-			background-color: transparent;
+			background-color: transparent !important;
 			border-radius: 9999px;
 			min-inline-size: 0px;
 			min-block-size: var(--encore-control-size-smaller, 32px);
@@ -104,7 +104,7 @@
 			transition: opacity .2s;
 
 			--ViewControlSize: 30px;
-			
+
 			.ViewControl {
 				display: inline-flex;
 				align-items: center;
@@ -114,11 +114,13 @@
 				min-width: var(--ViewControlSize);
 				min-height: var(--ViewControlSize);
 				padding: 0;
-				background-color: transparent;
-				border: none;
+				background-color: transparent !important;
+				border: none !important;
 				border-radius: 9999px;
 				cursor: pointer;
 				color: var(--spice-text);
+				-webkit-appearance: none;
+				appearance: none;
 				transition: background-color 0.1s ease, transform 0.1s ease;
 
 				svg {
@@ -150,7 +152,7 @@
 		flex: 1;
 		-webkit-box-flex: 1;
 
-		font-family: CircularSpTitle, CircularSpTitle-Tall, CircularSp-Arab, CircularSp-Hebr, CircularSp-Cyrl, CircularSp-Grek, CircularSp-Deva, var(--fallback-fonts, sans-serif);
+		font-family: SpicyLyrics, var(--fallback-fonts, sans-serif);
 		font-size: 1.5rem;
 		line-height: 2.5rem;
 

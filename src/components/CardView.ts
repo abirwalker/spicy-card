@@ -12,7 +12,7 @@ import {
 } from '../utils/Shared'
 
 const CardContainer = `
-	<div id="BeautifulLyrics-CardView" style="">
+	<div id="SpicyCard-CardView" style="">
 		<div class="Header" data-encore-id="type">
 			<div class="Title">Lyrics</div>
 		</div>
@@ -136,8 +136,31 @@ export default class CardView implements Giveable {
 			}
 		}
 
+		// Force reset button styles that Spotify's global CSS overrides
+		this.ForceButtonStyles()
 		this.ReactToLyricsVisibility()
 		insertAfter.after(this.Container)
+	}
+
+	private ForceButtonStyles() {
+		// Spotify's global CSS overrides button backgrounds — force reset via inline styles
+		const resetBtn = (el: HTMLElement) => {
+			el.style.setProperty('background', 'transparent', 'important')
+			el.style.setProperty('background-color', 'transparent', 'important')
+			el.style.setProperty('border', 'none', 'important')
+			el.style.setProperty('-webkit-appearance', 'none', 'important')
+			el.style.setProperty('appearance', 'none', 'important')
+			el.style.setProperty('box-shadow', 'none', 'important')
+		}
+		resetBtn(this.ExpandedControls.CloseButton)
+		if (this.ExpandedControls.RomanizeButton.isConnected) {
+			resetBtn(this.ExpandedControls.RomanizeButton)
+		}
+		// ShowLyrics button needs border preserved but background reset
+		this.ShowLyricsButton.style.setProperty('background', 'transparent', 'important')
+		this.ShowLyricsButton.style.setProperty('background-color', 'transparent', 'important')
+		this.ShowLyricsButton.style.setProperty('-webkit-appearance', 'none', 'important')
+		this.ShowLyricsButton.style.setProperty('appearance', 'none', 'important')
 	}
 
 	private SetLyricsVisibility(visible: boolean) {

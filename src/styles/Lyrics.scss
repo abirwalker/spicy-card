@@ -62,7 +62,7 @@
 	line-height: 1.1818181818;
 	letter-spacing: 0em;
 	transition: color 0.1s, transform 0.1s ease-in-out, padding 0.1s ease-in-out;
-	font-family: "BeautifulLyrics" !important;
+	font-family: SpicyLyrics, var(--fallback-fonts, sans-serif) !important;
 	unicode-bidi: isolate;
 	margin-top: 1cqw;
 	margin-bottom: 1cqw;
