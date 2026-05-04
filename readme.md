@@ -11,16 +11,29 @@ Made by [abirwalker](https://github.com/abirwalker).
 
 ## Installation
 
-> Coming soon — manual install steps will be added here.
+### Quick Installation
 
-## Building from Source
+You can use the pre-compiled extension without building from source:
+
+1. Download the extension file from `Extension/Build/v1.0.1/spicy-card.js`
+2. Locate your Spicetify extensions directory:
+   - **Windows**: `%APPDATA%\spicetify\Extensions`
+   - **macOS**: `~/.config/spicetify/Extensions`
+   - **Linux**: `~/.config/spicetify/Extensions`
+3. Place `spicy-card.js` in the extensions directory
+4. Run `spicetify config extensions spicy-card.js`
+5. Run `spicetify apply`
+
+### Build from Source
+
+If you want to build the extension yourself:
 
 ```bash
 npm install
 npm run build
 ```
 
-
+The built extension will be available at `dist/spicy-card.js`. Copy this file to your Spicetify extensions directory and follow the installation steps from Option 1.
 
 ## Credits
 
