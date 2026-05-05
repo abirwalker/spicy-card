@@ -11,6 +11,7 @@ import { Defer } from './utils/Scheduler'
 import { CreateElement } from './utils/Shared'
 import { fetchAndAdaptLyrics } from './utils/fetchLyrics'
 import CardView from './components/CardView'
+import NoLyricsCard from './components/NoLyricsCard'
 
 // Load SpicyLyrics font
 const fontLink = document.createElement('link')
@@ -101,7 +102,10 @@ async function init() {
 		const onSongChange = async () => {
 			nowPlayingViewMaid.Clean("Card")
 
-			if (!isStreamedTrack()) return
+			if (!isStreamedTrack()) {
+				nowPlayingViewMaid.Give(new NoLyricsCard(cardAnchor), "Card")
+				return
+			}
 
 			const trackId = getCurrentTrackId()
 			if (!trackId) return
@@ -122,6 +126,8 @@ async function init() {
 
 			if (lyrics) {
 				nowPlayingViewMaid.Give(new CardView(cardAnchor, lyrics), "Card")
+			} else {
+				nowPlayingViewMaid.Give(new NoLyricsCard(cardAnchor), "Card")
 			}
 		}
 

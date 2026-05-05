@@ -1,7 +1,7 @@
 {
   "name": "spicy-card",
   "author": "abirwalker",
-  "version": "1.0.1",
+  "version": "1.0.1.1.1",
   "description": "Beautiful Lyrics card view using hotwiring Spicy Lyrics API",
   "scripts": {
     "dev": "spicetify-creator dev",

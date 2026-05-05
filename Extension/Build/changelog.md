@@ -1,5 +1,14 @@
 # Changelog
 
+
+## [v1.0.1.1.1] - 2026-05-05
+
+### Fixed
+
+- Card no longer silently disappears when a track has no lyrics — now shows a "No lyrics available" message in the sidebar instead
+
+---
+
 ## [v1.0.1.1] - 2026-05-04
 
 ### Changed
