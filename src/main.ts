@@ -8,7 +8,7 @@ import './styles/simplebar.css'
 
 import { Maid } from './utils/Maid'
 import { Defer } from './utils/Scheduler'
-import { CreateElement } from './utils/Shared'
+import { CreateElement, ResetRomanization } from './utils/Shared'
 import { fetchAndAdaptLyrics } from './utils/fetchLyrics'
 import CardView from './components/CardView'
 import NoLyricsCard from './components/NoLyricsCard'
@@ -56,7 +56,8 @@ const waitForSpicetify = (): Promise<void> => {
 			if (
 				Spicetify?.Player &&
 				Spicetify?.LocalStorage &&
-				Spicetify?.CosmosAsync
+				Spicetify?.CosmosAsync &&
+				Spicetify.Player.data?.item  // wait until player has track data
 			) {
 				resolve()
 			} else {
@@ -102,12 +103,26 @@ async function init() {
 		const onSongChange = async () => {
 			nowPlayingViewMaid.Clean("Card")
 
+			// Always reset romanization on song change — lyrics start in original state
+			ResetRomanization()
+
 			if (!isStreamedTrack()) {
 				nowPlayingViewMaid.Give(new NoLyricsCard(cardAnchor), "Card")
 				return
 			}
 
-			const trackId = getCurrentTrackId()
+			// Wait for track ID to be available (can be null briefly on first load)
+			let trackId = getCurrentTrackId()
+			if (!trackId) {
+				await new Promise<void>(resolve => {
+					const interval = setInterval(() => {
+						trackId = getCurrentTrackId()
+						if (trackId) { clearInterval(interval); resolve() }
+					}, 100)
+					// Give up after 3s
+					setTimeout(() => { clearInterval(interval); resolve() }, 3000)
+				})
+			}
 			if (!trackId) return
 
 			// Show loading placeholder
@@ -117,15 +132,15 @@ async function init() {
 			cardAnchor.after(loadingCard)
 
 			const fetchId = ++currentFetchId
-			const lyrics = await fetchAndAdaptLyrics(trackId)
+			const result = await fetchAndAdaptLyrics(trackId)
 
 			// Discard stale results if track changed during fetch
 			if (fetchId !== currentFetchId) return
 
 			nowPlayingViewMaid.Clean("Card")
 
-			if (lyrics) {
-				nowPlayingViewMaid.Give(new CardView(cardAnchor, lyrics), "Card")
+			if (result) {
+				nowPlayingViewMaid.Give(new CardView(cardAnchor, result.lyrics, result.romanizationReady), "Card")
 			} else {
 				nowPlayingViewMaid.Give(new NoLyricsCard(cardAnchor), "Card")
 			}

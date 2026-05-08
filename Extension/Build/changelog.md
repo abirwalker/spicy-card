@@ -1,5 +1,24 @@
 # Changelog
 
+## [v1.0.1.1.111] - 2026-05-09
+
+### Added
+
+- Romanization support for Japanese, Korean, and Chinese — yes, actually working this time. Kuroshiro, aromanize, and pinyin loaded in the background so the toggle is ready before you even think about pressing it.
+- Romanization toggle in the expanded lyrics header — only appears when the song actually has CJK lyrics, because why show it otherwise.
+- Lyrics always start in original mode on track change. No more being stuck reading romanized Mandarin you didn't ask for.
+
+### Fixed
+
+- Lyrics not showing on first load — `songchange` was firing too early and `waitForSpicetify` was lying about being ready. Both fixed.
+- Pinyin clipping the text because romanized characters are longer than CJK. Font scales down automatically now.
+- Romanization state resetting on track change — it does now, intentionally.
+
+### Credits
+
+- Romanization powered by Spicy Lyrics CDN (pkgs.spikerko.org) — Kuroshiro + Kuromoji for Japanese, aromanize for Korean, pinyin for Chinese; all running client-side before you even touch the toggle.
+
+---
 
 ## [v1.0.1.1.1] - 2026-05-05
 
@@ -30,8 +49,7 @@
 ## [v1.0.1] - Initial release
 
 - Synced lyrics card view in the Spotify right sidebar
-- Line-by-line  lyrics support
+- Line-by-line lyrics support
 - Static lyrics fallback
-- ~~Romanization support for Japanese, Korean, and Chinese~~ (not working)
+- ~~Romanization support for Japanese, Korean, and Chinese~~ ~~(not working)~~
 - Powered by the Spicy Lyrics API
-

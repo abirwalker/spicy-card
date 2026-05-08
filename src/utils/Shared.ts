@@ -49,8 +49,19 @@ export const CreateElement = <E = HTMLElement>(text: string) => {
 export const ToggleLanguageRomanization = (language: RomanizedLanguage, isRomanized: boolean) => {
 	if (Store.Items.RomanizedLanguages[language] !== isRomanized) {
 		Store.Items.RomanizedLanguages[language] = isRomanized
-		Store.SaveChanges()
+		// Don't persist romanization — it resets per song
 		LanguageRomanizationChangedSignal.Fire(language, isRomanized)
+	}
+}
+
+// Called on every song change to ensure lyrics always start in original state
+export const ResetRomanization = () => {
+	const languages: RomanizedLanguage[] = ["Chinese", "Japanese", "Korean"]
+	for (const lang of languages) {
+		if (Store.Items.RomanizedLanguages[lang]) {
+			Store.Items.RomanizedLanguages[lang] = false
+			LanguageRomanizationChangedSignal.Fire(lang, false)
+		}
 	}
 }
 

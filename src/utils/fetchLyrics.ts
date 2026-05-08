@@ -1,6 +1,7 @@
 import { TransformedLyrics } from '../types/Lyrics'
 import { Query } from './Query'
 import { adaptLyrics } from './adaptLyrics'
+import { processRomanization, detectCJKLanguage } from './processLyrics'
 
 async function getAccessToken(): Promise<string> {
 	try {
@@ -14,7 +15,14 @@ async function getAccessToken(): Promise<string> {
 	}
 }
 
-export async function fetchAndAdaptLyrics(trackId: string): Promise<TransformedLyrics | null> {
+export type LyricsResult = {
+	lyrics: TransformedLyrics
+	// Resolves when background romanization is complete (or failed).
+	// CardView awaits this before re-rendering when the user clicks romanize.
+	romanizationReady: Promise<void>
+}
+
+export async function fetchAndAdaptLyrics(trackId: string): Promise<LyricsResult | null> {
 	try {
 		const accessToken = await getAccessToken()
 
@@ -36,7 +44,16 @@ export async function fetchAndAdaptLyrics(trackId: string): Promise<TransformedL
 			return null
 		}
 
-		return adaptLyrics(result.data)
+		// Start romanization in background — don't await.
+		// RomanizedText fields are populated in-place on the raw data object.
+		// romanizationReady resolves when done so CardView can wait on it if needed.
+		const romanizationReady = detectCJKLanguage(result.data)
+			? processRomanization(result.data).catch(err =>
+				console.warn("[SpicyCardView] Background romanization failed:", err)
+			  )
+			: Promise.resolve()
+
+		return { lyrics: adaptLyrics(result.data), romanizationReady }
 	} catch (error) {
 		console.error("[SpicyCardView] fetchAndAdaptLyrics error:", error)
 		return null

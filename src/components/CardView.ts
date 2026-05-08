@@ -3,7 +3,7 @@
 //          removed SpotifyHistory dependency, removed SongLyrics global import
 
 import { Maid, Giveable } from '../utils/Maid'
-import { TransformedLyrics, RomanizedLanguage } from '../types/Lyrics'
+import { TransformedLyrics } from '../types/Lyrics'
 import LyricsRenderer from '../modules/LyricsRenderer/index'
 import {
 	CreateElement,
@@ -33,15 +33,17 @@ const RomanizationIcons = {
 		</svg>
 	`.trim()
 }
-// "Open Page" button removed — no page view in this extension
-const ExpandedControls = `
+
+// Romanize button only shown when lyrics are expanded (inside Controls)
+const ExpandedControls = (hasRomanization: boolean) => `
 	<div class="Controls">
-		<button id="Romanize" class="ViewControl"></button>
+		${hasRomanization ? `<button id="Romanize" class="ViewControl"></button>` : ''}
 		<button id="Close" class="ViewControl">
 			<svg role="img" height="16" width="16" aria-hidden="true" viewBox="0 0 16 16" data-encore-id="icon" class="Svg-sc-ytk21e-0 Svg-img-16-icon"><path d="M1.47 1.47a.75.75 0 0 1 1.06 0L8 6.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L9.06 8l5.47 5.47a.75.75 0 1 1-1.06 1.06L8 9.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L6.94 8 1.47 2.53a.75.75 0 0 1 0-1.06z"></path></svg>
 		</button>
 	</div>
 `.trim()
+
 const LyricsContainer = `<div class="LyricsContent"><div class="ContentContainer"></div></div>`
 
 export default class CardView implements Giveable {
@@ -51,7 +53,7 @@ export default class CardView implements Giveable {
 	private readonly ShowLyricsButton: HTMLButtonElement
 	private readonly ExpandedControls: {
 		Container: HTMLDivElement
-		RomanizeButton: HTMLButtonElement
+		RomanizeButton: HTMLButtonElement | null
 		CloseButton: HTMLButtonElement
 	}
 	private readonly RomanizeTooltip: any
@@ -59,7 +61,7 @@ export default class CardView implements Giveable {
 	private readonly LyricsContentContainer: HTMLDivElement
 	private readonly TransformedLyrics: TransformedLyrics
 
-	constructor(insertAfter: HTMLDivElement, transformedLyrics: TransformedLyrics) {
+	constructor(insertAfter: HTMLDivElement, transformedLyrics: TransformedLyrics, romanizationReady: Promise<void> = Promise.resolve()) {
 		this.TransformedLyrics = transformedLyrics
 
 		{
@@ -67,16 +69,14 @@ export default class CardView implements Giveable {
 			this.Header = this.Container.querySelector<HTMLDivElement>(".Header")!
 			this.ShowLyricsButton = this.Maid.Give(CreateElement<HTMLButtonElement>(ShowLyricsButton))
 
-			const expandedControlsContainer = this.Maid.Give(CreateElement<HTMLDivElement>(ExpandedControls))
+			const hasRomanization = transformedLyrics.RomanizedLanguage !== undefined
+			const expandedControlsContainer = this.Maid.Give(
+				CreateElement<HTMLDivElement>(ExpandedControls(hasRomanization))
+			)
 			this.ExpandedControls = {
 				Container: expandedControlsContainer,
-				RomanizeButton: expandedControlsContainer.querySelector<HTMLButtonElement>("#Romanize")!,
+				RomanizeButton: expandedControlsContainer.querySelector<HTMLButtonElement>("#Romanize"),
 				CloseButton: expandedControlsContainer.querySelector<HTMLButtonElement>("#Close")!,
-			}
-
-			// Hide romanize button if no romanization available
-			if (transformedLyrics.RomanizedLanguage === undefined) {
-				this.ExpandedControls.RomanizeButton.remove()
 			}
 
 			this.LyricsContainer = this.Maid.Give(CreateElement<HTMLDivElement>(LyricsContainer))
@@ -92,35 +92,37 @@ export default class CardView implements Giveable {
 				const closeTooltip = tippy(this.ExpandedControls.CloseButton, { ...tippyProps, content: "Close Lyrics" })
 				this.Maid.Give(() => closeTooltip.destroy())
 
-				if (transformedLyrics.RomanizedLanguage !== undefined) {
-					const romanizeTooltip = tippy(this.ExpandedControls.RomanizeButton, { ...tippyProps, content: "Waiting For Update" })
+				if (this.ExpandedControls.RomanizeButton) {
+					const romanizeTooltip = tippy(this.ExpandedControls.RomanizeButton, { ...tippyProps, content: "Enable Romanization" })
 					this.Maid.Give(() => romanizeTooltip.destroy())
 					this.RomanizeTooltip = romanizeTooltip
 				}
 			}
 		}
 
-		// Romanization updates
-		if (transformedLyrics.RomanizedLanguage !== undefined) {
-			const SetContent = (isRomanized: boolean) => {
+		// Romanization state sync
+		if (transformedLyrics.RomanizedLanguage !== undefined && this.ExpandedControls.RomanizeButton) {
+			const SetIcon = (isRomanized: boolean) => {
 				if (this.RomanizeTooltip) {
 					this.RomanizeTooltip.setContent(isRomanized ? "Disable Romanization" : "Enable Romanization")
 				}
-				this.ExpandedControls.RomanizeButton.innerHTML = (
+				this.ExpandedControls.RomanizeButton!.innerHTML = (
 					isRomanized ? RomanizationIcons.Enabled : RomanizationIcons.Disabled
 				)
+				this.Container.classList.toggle("Romanized", isRomanized)
 			}
 
 			this.Maid.Give(
 				LanguageRomanizationChanged.Connect((language, isRomanized) => {
 					if (language === transformedLyrics.RomanizedLanguage) {
-						SetContent(isRomanized)
+						SetIcon(isRomanized)
+						// Re-render lyrics to switch between original and romanized text
 						if (this.Maid.Has("LyricsRenderer")) this.CreateLyricsRenderer()
 					}
 				})
 			)
 
-			SetContent(IsLanguageRomanized(transformedLyrics.RomanizedLanguage))
+			SetIcon(IsLanguageRomanized(transformedLyrics.RomanizedLanguage))
 		}
 
 		// Button handlers
@@ -128,11 +130,16 @@ export default class CardView implements Giveable {
 			this.ShowLyricsButton.addEventListener("click", () => this.SetLyricsVisibility(true))
 			this.ExpandedControls.CloseButton.addEventListener("click", () => this.SetLyricsVisibility(false))
 
-			if (transformedLyrics.RomanizedLanguage !== undefined) {
+			if (transformedLyrics.RomanizedLanguage !== undefined && this.ExpandedControls.RomanizeButton) {
 				const romanizedLanguage = transformedLyrics.RomanizedLanguage
-				this.ExpandedControls.RomanizeButton.addEventListener("click", () =>
-					ToggleLanguageRomanization(romanizedLanguage, !IsLanguageRomanized(romanizedLanguage))
-				)
+				this.ExpandedControls.RomanizeButton.addEventListener("click", async () => {
+					const nowRomanized = !IsLanguageRomanized(romanizedLanguage)
+					if (nowRomanized) {
+						// Wait for background romanization to finish before switching
+						await romanizationReady
+					}
+					ToggleLanguageRomanization(romanizedLanguage, nowRomanized)
+				})
 			}
 		}
 
@@ -143,7 +150,6 @@ export default class CardView implements Giveable {
 	}
 
 	private ForceButtonStyles() {
-		// Spotify's global CSS overrides button backgrounds — force reset via inline styles
 		const resetBtn = (el: HTMLElement) => {
 			el.style.setProperty('background', 'transparent', 'important')
 			el.style.setProperty('background-color', 'transparent', 'important')
@@ -153,10 +159,9 @@ export default class CardView implements Giveable {
 			el.style.setProperty('box-shadow', 'none', 'important')
 		}
 		resetBtn(this.ExpandedControls.CloseButton)
-		if (this.ExpandedControls.RomanizeButton.isConnected) {
+		if (this.ExpandedControls.RomanizeButton) {
 			resetBtn(this.ExpandedControls.RomanizeButton)
 		}
-		// ShowLyrics button needs border preserved but background reset
 		this.ShowLyricsButton.style.setProperty('background', 'transparent', 'important')
 		this.ShowLyricsButton.style.setProperty('background-color', 'transparent', 'important')
 		this.ShowLyricsButton.style.setProperty('-webkit-appearance', 'none', 'important')

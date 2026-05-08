@@ -40,6 +40,10 @@
 		-webkit-box-align: center;
 		-ms-flex-align: center;
 
+		position: relative;
+		z-index: 10;
+		pointer-events: auto;
+
 		.Title {
 			display: -webkit-box;
 			-webkit-box-orient: vertical;
@@ -49,6 +53,48 @@
 			overflow: hidden;
 			text-overflow: ellipsis;
 			-webkit-line-clamp: 1;
+			line-clamp: 1;
+			pointer-events: none !important;
+			position: relative;
+			z-index: 1 !important;
+		}
+
+		.RomanizeButton {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 30px;
+			height: 30px;
+			min-width: 30px;
+			min-height: 30px;
+			padding: 0;
+			background-color: transparent !important;
+			border: none !important;
+			border-radius: 9999px;
+			cursor: pointer !important;
+			color: var(--spice-text);
+			-webkit-appearance: none;
+			appearance: none;
+			transition: background-color 0.1s ease, transform 0.1s ease;
+			pointer-events: auto !important;
+			position: relative !important;
+			z-index: 999 !important;
+			margin-left: auto;
+
+			svg {
+				fill: currentColor;
+				flex-shrink: 0;
+				pointer-events: none !important;
+			}
+
+			&:hover {
+				background-color: rgba(255, 255, 255, 0.1) !important;
+				transform: scale(1.1);
+			}
+
+			&:active {
+				transform: scale(0.95);
+			}
 		}
 
 		.ShowLyrics {
@@ -105,6 +151,10 @@
 
 			--ViewControlSize: 30px;
 
+			position: relative !important;
+			z-index: 999 !important;
+			pointer-events: none;
+
 			.ViewControl {
 				display: inline-flex;
 				align-items: center;
@@ -117,24 +167,33 @@
 				background-color: transparent !important;
 				border: none !important;
 				border-radius: 9999px;
-				cursor: pointer;
+				cursor: pointer !important;
 				color: var(--spice-text);
 				-webkit-appearance: none;
 				appearance: none;
 				transition: background-color 0.1s ease, transform 0.1s ease;
+				pointer-events: auto !important;
+				position: relative !important;
+				z-index: 999 !important;
 
 				svg {
 					fill: currentColor;
 					flex-shrink: 0;
+					pointer-events: none !important;
 				}
 
 				&:hover {
-					background-color: rgba(255, 255, 255, 0.1);
+					background-color: rgba(255, 255, 255, 0.1) !important;
 					transform: scale(1.1);
 				}
 
 				&:active {
 					transform: scale(0.95);
+				}
+
+				&:disabled {
+					cursor: not-allowed !important;
+					opacity: 0.5;
 				}
 			}
 		}
@@ -143,6 +202,7 @@
 	&:hover {
 		.Header .Controls {
 			opacity: 1;
+			pointer-events: auto;
 		}
 	}
 
@@ -160,15 +220,24 @@
 		mask-image: linear-gradient(180deg, transparent 0, transparent 16px, var(--spice-sidebar) 24px, var(--spice-sidebar) calc(100% - 64px), transparent calc(100% - 16px), transparent);
 
 		overflow: hidden;
+		overflow-x: hidden;
 		margin: -16px;
 
 		.ContentContainer {
 			display: block;
 			width: 100cqw;
+			max-width: 100%;
 			height: 25cqh;
 			container-type: size;
 			z-index: 100;
+			overflow: hidden;
 		}
+	}
+
+	// Romanized CJK text is longer per line — scale down to prevent clipping
+	&.Romanized .LyricsContent {
+		font-size: 1.1rem;
+		line-height: 1.9rem;
 	}
 }
 

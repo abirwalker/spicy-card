@@ -3,8 +3,10 @@
 	display: inline-block;
 	position: relative;
 	width: 100cqw;
+	max-width: 100%;
 	height: 100cqh;
 	overflow: auto;
+	overflow-x: hidden;
 }
 
 /* Scrollbar */
@@ -120,8 +122,8 @@
 	contain: layout paint;
 }
 
-.Lyrics .Vocals { width: 95cqw; }
-.Lyrics:has(.AlignedOpposite) .Vocals { width: 75cqw; }
+.Lyrics .Vocals { width: 95cqw; max-width: 95cqw; overflow: hidden; }
+.Lyrics:has(.AlignedOpposite) .Vocals { width: 75cqw; max-width: 75cqw; overflow: hidden; }
 .NaturallyAlignedLeft .VocalsGroup.AlignedOpposite .Vocals { justify-content: flex-end; }
 .NaturallyAlignedRight .VocalsGroup.AlignedOpposite .Vocals { justify-content: flex-start; }
 
