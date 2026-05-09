@@ -1,8 +1,10 @@
 # Spicy Card
 
-A Spicetify extension that brings a synced lyrics card view right into Spotify's sidebar. It hooks into the [Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics) API and the lyrics rendering is adapted from [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics) by SoCalifornian.
+A Spicetify extension that brings a synced lyrics card view right into Spotify's sidebar. It hooks into the [Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics) API by Spikerko and inspired from [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics) by SoCalifornian.
 
-Made by [abirwalker](https://github.com/abirwalker).
+## Preview
+
+![Spicy Card Preview](preview.gif)
 
 ## Requirements
 
@@ -11,9 +13,20 @@ Made by [abirwalker](https://github.com/abirwalker).
 
 ## Installation
 
-### Quick Installation
+### From Spicetify Marketplace (Recommended)
 
-You can use the pre-compiled extension without building from source:
+The easiest way to install Spicy Card is through the Spicetify Marketplace:
+
+1. Make sure you have [Spicetify](https://spicetify.app/) installed
+2. Open Spotify and click on "Marketplace" in the sidebar
+3. Search for "Spicy Card"
+4. Click "Install"
+
+That's it! The extension will be automatically installed and enabled.
+
+### Manual Installation (Alternative)
+
+If you prefer to install manually or want to use a development build:
 
 1. Download the extension file from `Extension/Build/(latest version)/spicy-card.js`
 2. Locate your Spicetify extensions directory:
@@ -40,9 +53,8 @@ The built extension will be available at `dist/spicy-card.js`. Copy this file to
 ### Beautiful Lyrics — SoCalifornian
 
 The card view UI, Maid lifecycle pattern, sidebar injection logic, and lyrics renderer
-architecture are adapted from [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics)
-by [SoCalifornian](https://github.com/surfbryce). The original project is no longer maintained.
-No license details was provided by the original author.
+architecture are inspired from [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics)
+by [SoCalifornian](https://github.com/surfbryce).
 
 ### Spicy Lyrics — Spikerko
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [v1.0.1.1.111.1] - 2026-05-09
+
+### Fixed
+
+- Lyrics text getting chopped/cut off during scale animations — added proper padding and margin compensation to prevent clipping
+
+### Improved
+
+- Code cleanup: removed unused `Maid` import and `PlaybarDetailsHidden` field from Store type
+- Removed debug console.log from `adaptLyrics.ts` that was firing on every song change
+
+---
+
 ## [v1.0.1.1.111] - 2026-05-09
 
 ### Added

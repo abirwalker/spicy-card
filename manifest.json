@@ -1,0 +1,15 @@
+{
+  "name": "Spicy Card",
+  "description": "Synced lyrics card view in Spotify's sidebar. Powered by Spicy Lyrics API with support for line-synced, syllable-synced, and static lyrics. Includes romanization for Japanese, Korean, and Chinese.",
+  "preview": "preview.gif",
+  "main": "Extension/Build/v1.0.1.1.111.1/spicy-card.js",
+  "readme": "readme.md",
+  "authors": [
+    {
+      "name": "abirwalker",
+      "url": "https://github.com/abirwalker"
+    }
+  ],
+  "tags": ["lyrics","NPV", "sidebar","card", "romanization", "synced-lyrics"],
+  "version": "1.0.1.1.112"
+}
