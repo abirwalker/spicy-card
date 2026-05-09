@@ -1,6 +1,5 @@
 import { RomanizedLanguage } from '../types/Lyrics'
 import { Signal } from './Signal'
-import { Maid } from './Maid'
 
 // Simple localStorage-backed store
 function GetInstantStore<T extends object>(key: string, _version: number, defaults: T) {
@@ -26,13 +25,11 @@ function GetInstantStore<T extends object>(key: string, _version: number, defaul
 
 export const Store = GetInstantStore<{
 	CardLyricsVisible: boolean
-	PlaybarDetailsHidden: boolean
 	RomanizedLanguages: { [key in RomanizedLanguage]: boolean }
 }>(
-	"BeautifulLyrics/LyricViews", 1,
+	"SpicyCard/LyricViews", 1,
 	{
 		CardLyricsVisible: false,
-		PlaybarDetailsHidden: false,
 		RomanizedLanguages: { Chinese: false, Japanese: false, Korean: false }
 	}
 )

@@ -45,6 +45,14 @@ function detectLanguageFromContent(response: any): RomanizedLanguage | undefined
 	return hasCJK ? "Chinese" : undefined
 }
 
+// Detect if language uses RTL (right-to-left) text direction
+function isRTLLanguage(lang?: string): boolean {
+	if (!lang) return false
+	// Arabic (ara, ar), Hebrew (heb, he), Persian (fas, fa), Urdu (urd, ur)
+	const rtlCodes = ["ara", "ar", "heb", "he", "fas", "fa", "urd", "ur"]
+	return rtlCodes.includes(lang.toLowerCase())
+}
+
 // Computes EndTime from the last item in a Content array
 function getEndTime(content: any[]): number {
 	if (!content || content.length === 0) return 0
@@ -65,16 +73,13 @@ export function adaptLyrics(response: any): TransformedLyrics {
 		romanizedLanguage = detectLanguageFromContent(response)
 	}
 
-	console.log("[SpicyCardView] adaptLyrics:", {
-		IncludesRomanization: response.IncludesRomanization,
-		Language: response.Language,
-		LanguageISO2: response.LanguageISO2,
-		detectedLanguage: romanizedLanguage
-	})
+	// Determine text alignment based on language
+	const language = response.Language ?? response.LanguageISO2 ?? "und"
+	const naturalAlignment = isRTLLanguage(language) ? "Right" : "Left"
 
 	const base = {
-		NaturalAlignment: "Left" as const,
-		Language: response.Language ?? "und",
+		NaturalAlignment: naturalAlignment as "Left" | "Right",
+		Language: language,
 		...(romanizedLanguage ? { RomanizedLanguage: romanizedLanguage } : {}),
 	}
 
