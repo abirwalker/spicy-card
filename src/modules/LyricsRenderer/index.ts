@@ -10,6 +10,7 @@ import SyllableVocals from './SyllableVocals'
 
 export default class LyricsRenderer implements Giveable {
 	private Maid: Maid = new Maid()
+	public readonly Scroller: LyricsScroller<any> | undefined
 
 	constructor(
 		parentContainer: HTMLDivElement,
@@ -91,6 +92,7 @@ export default class LyricsRenderer implements Giveable {
 			}
 
 			const scroller = this.Maid.Give(new LyricsScroller(scrollContainer, lyricsContainer, vocalGroups, true))
+			this.Scroller = scroller
 
 			let justSkippedByVocal = false
 			// Timestamp-driven animation loop

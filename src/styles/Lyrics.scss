@@ -3,10 +3,17 @@
 	display: inline-block;
 	position: relative;
 	width: 100cqw;
-	max-width: 100%;
 	height: 100cqh;
-	overflow: auto;
-	overflow-x: hidden;
+	overflow-y: auto;
+	overflow-x: visible;
+	
+	/* Hide scrollbar but keep functionality */
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE and Edge */
+	
+	&::-webkit-scrollbar {
+		display: none; /* Chrome, Safari, Opera */
+	}
 }
 
 /* Scrollbar */
@@ -47,7 +54,6 @@
 	--minimum-lyrics-size: 1.85rem;
 
 	will-change: transform;
-	contain: layout paint;
 }
 
 /* Group */
@@ -69,7 +75,6 @@
 	margin-top: 1cqw;
 	margin-bottom: 1cqw;
 	will-change: transform;
-	contain: layout paint;
 }
 
 .VocalsGroup:is(button) { cursor: pointer; }
@@ -119,11 +124,10 @@
 	flex-wrap: wrap;
 	--lyrics-size: clamp(var(--minimum-lyrics-size), calc(1cqw * var(--vocal-lyrics-scale)), var(--maximum-lyrics-size));
 	will-change: transform, opacity;
-	contain: layout paint;
 }
 
-.Lyrics .Vocals { width: 95cqw; max-width: 95cqw; overflow: hidden; }
-.Lyrics:has(.AlignedOpposite) .Vocals { width: 75cqw; max-width: 75cqw; overflow: hidden; }
+.Lyrics .Vocals { overflow: visible; }
+.Lyrics:has(.AlignedOpposite) .Vocals { overflow: visible; }
 .NaturallyAlignedLeft .VocalsGroup.AlignedOpposite .Vocals { justify-content: flex-end; }
 .NaturallyAlignedRight .VocalsGroup.AlignedOpposite .Vocals { justify-content: flex-start; }
 
@@ -191,6 +195,9 @@
 	--gradient-color-alpha: 0.4;
 	display: flex;
 	white-space: pre-wrap;
+	/* Add safe space for scale animation to prevent chopping */
+	padding-right: 0.5em;
+	margin-right: -0.5em;
 }
 .Vocals.Lead .Line { transition: background-color 0.3s cubic-bezier(0.61, 1, 0.88, 1); transition: scale 0.1s cubic-bezier(0.37, 0, 0.63, 1); }
 .Vocals.Lead.Active .Line { --gradient-offset: 0%; scale: 1.05; }
@@ -200,7 +207,7 @@
 .NaturallyAlignedRight .VocalsGroup.AlignedOpposite .Line { transform-origin: left center; }
 
 /* Syllable-Synced Lyric */
-.Syllable, .Word { display: flex; white-space: nowrap; }
+.Syllable, .Word { display: inline-block; }
 .Syllable:not(.Emphasis) { white-space: pre; }
 .Syllable.PartOfWord.StartOfWord { transform-origin: right center; }
 .Syllable.EndOfWord { transform-origin: left center; }

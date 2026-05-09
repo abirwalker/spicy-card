@@ -89,7 +89,7 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 		}
 	}
 
-	private UpdateLyricHeights() {
+	public UpdateLyricHeights() {
 		this.GroupDimensions = []
 		let totalHeight = 0
 		for (const vocalGroup of this.VocalGroups) {

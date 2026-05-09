@@ -219,9 +219,17 @@
 		-webkit-mask-image: linear-gradient(180deg, transparent 0, transparent 16px, var(--spice-sidebar) 24px, var(--spice-sidebar) calc(100% - 64px), transparent calc(100% - 16px), transparent);
 		mask-image: linear-gradient(180deg, transparent 0, transparent 16px, var(--spice-sidebar) 24px, var(--spice-sidebar) calc(100% - 64px), transparent calc(100% - 16px), transparent);
 
-		overflow: hidden;
-		overflow-x: hidden;
+		overflow-y: auto;
+		overflow-x: visible;
 		margin: -16px;
+		
+		/* Hide scrollbar but keep functionality */
+		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none; /* IE and Edge */
+		
+		&::-webkit-scrollbar {
+			display: none; /* Chrome, Safari, Opera */
+		}
 
 		.ContentContainer {
 			display: block;
@@ -230,7 +238,7 @@
 			height: 25cqh;
 			container-type: size;
 			z-index: 100;
-			overflow: hidden;
+			overflow: visible;
 		}
 	}
 

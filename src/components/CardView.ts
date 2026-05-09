@@ -175,7 +175,7 @@ export default class CardView implements Giveable {
 	}
 
 	private CreateLyricsRenderer() {
-		this.Maid.Give(
+		const renderer = this.Maid.Give(
 			new LyricsRenderer(
 				this.LyricsContentContainer,
 				this.TransformedLyrics,
@@ -185,6 +185,24 @@ export default class CardView implements Giveable {
 			),
 			"LyricsRenderer"
 		)
+
+		// Add ResizeObserver to watch for parent container resize
+		if (renderer.Scroller) {
+			const resizeObserver = new ResizeObserver(() => {
+				// Force the renderer to recalculate dimensions
+				if (renderer.Scroller) {
+					renderer.Scroller.UpdateLyricHeights()
+					renderer.Scroller.ForceToActive()
+				}
+			})
+
+			// Observe the CardView container (parent of lyrics)
+			resizeObserver.observe(this.Container)
+
+			this.Maid.Give(() => {
+				resizeObserver.disconnect()
+			}, "LyricsRendererResizeObserver")
+		}
 	}
 
 	private ReactToLyricsVisibility() {
