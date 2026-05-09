@@ -20,6 +20,15 @@
 .simplebar-scrollbar::before {
 	background: white !important;
 	opacity: 0 !important;
+	display: none !important;
+}
+
+.simplebar-scrollbar {
+	display: none !important;
+}
+
+.simplebar-track {
+	display: none !important;
 }
 
 [data-simplebar]:not(.simplebar-dragging) .simplebar-content-wrapper {
@@ -31,7 +40,8 @@
 }
 
 .LyricsScrollContainer:hover .simplebar-scrollbar::before {
-	opacity: 0.5 !important;
+	opacity: 0 !important;
+	display: none !important;
 }
 
 /* Lyrics Container */
@@ -124,6 +134,7 @@
 	flex-wrap: wrap;
 	--lyrics-size: clamp(var(--minimum-lyrics-size), calc(1cqw * var(--vocal-lyrics-scale)), var(--maximum-lyrics-size));
 	will-change: transform, opacity;
+	max-width: 96%; /* Leave room for scale expansion */
 }
 
 .Lyrics .Vocals { overflow: visible; }
@@ -200,7 +211,7 @@
 	margin-right: -0.5em;
 }
 .Vocals.Lead .Line { transition: background-color 0.3s cubic-bezier(0.61, 1, 0.88, 1); transition: scale 0.1s cubic-bezier(0.37, 0, 0.63, 1); }
-.Vocals.Lead.Active .Line { --gradient-offset: 0%; scale: 1.05; }
+.Vocals.Lead.Active .Line { --gradient-offset: 0%; scale: 1.04; }
 .NaturallyAlignedLeft .Line { transform-origin: left center; }
 .NaturallyAlignedLeft .VocalsGroup.AlignedOpposite .Line { transform-origin: right center; }
 .NaturallyAlignedRight .Line { transform-origin: right center; }
