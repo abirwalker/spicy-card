@@ -7,28 +7,34 @@
 	overflow-y: auto;
 	overflow-x: visible;
 	
-	/* Hide scrollbar but keep functionality */
-	scrollbar-width: none; /* Firefox */
-	-ms-overflow-style: none; /* IE and Edge */
-	
-	&::-webkit-scrollbar {
-		display: none; /* Chrome, Safari, Opera */
-	}
+	/* Dynamic scrollbar sizing - adjust clamp() values below to fine-tune */
+	/* Format: clamp(MIN, PREFERRED, MAX) */
+	--scrollbar-width: clamp(10px, 2cqw, 14px);
 }
 
-/* Scrollbar */
-.simplebar-scrollbar::before {
-	background: white !important;
-	opacity: 0 !important;
-	display: none !important;
+/* SimpleBar scrollbar - override defaults to make visible */
+.simplebar-track.simplebar-vertical {
+	width: var(--scrollbar-width) !important;
+	background: rgba(255, 255, 255, 0.15);
+	border-radius: calc(var(--scrollbar-width) / 2);
 }
 
-.simplebar-scrollbar {
-	display: none !important;
+.simplebar-scrollbar:before {
+	background: rgba(255, 255, 255, 0.6);
+	border-radius: calc(var(--scrollbar-width) / 2);
 }
 
-.simplebar-track {
-	display: none !important;
+.simplebar-scrollbar.simplebar-visible:before {
+	opacity: 0.9;
+}
+
+/* Hide native scrollbar on SimpleBar wrapper */
+.simplebar-content-wrapper::-webkit-scrollbar {
+	display: none;
+}
+.simplebar-content-wrapper {
+	scrollbar-width: none;
+	-ms-overflow-style: none;
 }
 
 [data-simplebar]:not(.simplebar-dragging) .simplebar-content-wrapper {
@@ -37,11 +43,6 @@
 
 [data-simplebar]:not(.simplebar-dragging).InstantScroll .simplebar-content-wrapper {
 	scroll-behavior: auto;
-}
-
-.LyricsScrollContainer:hover .simplebar-scrollbar::before {
-	opacity: 0 !important;
-	display: none !important;
 }
 
 /* Lyrics Container */

@@ -208,9 +208,11 @@
 
 	.LyricsContent {
 		padding: 16px;
+		margin: -16px;
 
 		flex: 1;
 		-webkit-box-flex: 1;
+		overflow: visible;
 
 		font-family: SpicyLyrics, var(--fallback-fonts, sans-serif);
 		font-size: 1.5rem;
@@ -218,18 +220,6 @@
 
 		-webkit-mask-image: linear-gradient(180deg, transparent 0, transparent 16px, var(--spice-sidebar) 24px, var(--spice-sidebar) calc(100% - 64px), transparent calc(100% - 16px), transparent);
 		mask-image: linear-gradient(180deg, transparent 0, transparent 16px, var(--spice-sidebar) 24px, var(--spice-sidebar) calc(100% - 64px), transparent calc(100% - 16px), transparent);
-
-		overflow-y: auto;
-		overflow-x: visible;
-		margin: -16px;
-		
-		/* Hide scrollbar but keep functionality */
-		scrollbar-width: none; /* Firefox */
-		-ms-overflow-style: none; /* IE and Edge */
-		
-		&::-webkit-scrollbar {
-			display: none; /* Chrome, Safari, Opera */
-		}
 
 		.ContentContainer {
 			display: block;

@@ -1,9 +1,11 @@
 // Spicy Card View — main orchestrator
 // Adapted from Beautiful Lyrics LyricViews/mod.ts
 // Removed: page view routing, fullscreen button, WebGL background, analytics, playbar buttons
-
+// @ts-ignore this is temp fix
 import './styles/CardView.scss'
+// @ts-ignore this is temp fix
 import './styles/Lyrics.scss'
+// @ts-ignore this is temp fix
 import './styles/simplebar.css'
 
 import { Maid } from './utils/Maid'
