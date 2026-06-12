@@ -4,9 +4,9 @@
 // @ts-ignore this is temp fix
 import './styles/CardView.scss'
 // @ts-ignore this is temp fix
-import './styles/Lyrics.scss'
-// @ts-ignore this is temp fix
 import './styles/simplebar.css'
+// @ts-ignore this is temp fix
+import './styles/Lyrics.scss'
 
 import { Maid } from './utils/Maid'
 import { Defer } from './utils/Scheduler'

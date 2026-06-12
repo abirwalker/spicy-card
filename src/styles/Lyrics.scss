@@ -12,20 +12,34 @@
 	--scrollbar-width: clamp(10px, 2cqw, 14px);
 }
 
-/* SimpleBar scrollbar - override defaults to make visible */
+/* SimpleBar scrollbar - show on hover only */
 .simplebar-track.simplebar-vertical {
 	width: var(--scrollbar-width) !important;
-	background: rgba(255, 255, 255, 0.15);
+	background: transparent;
 	border-radius: calc(var(--scrollbar-width) / 2);
+	transition: background 0.2s 0.5s ease;
 }
 
 .simplebar-scrollbar:before {
 	background: rgba(255, 255, 255, 0.6);
 	border-radius: calc(var(--scrollbar-width) / 2);
+	opacity: 0 !important;
+	transition: opacity 0.2s 0.5s ease !important;
 }
 
 .simplebar-scrollbar.simplebar-visible:before {
-	opacity: 0.9;
+	opacity: 0 !important;
+	transition-delay: 0.5s !important;
+}
+
+#SpicyCard-CardView:hover .simplebar-track.simplebar-vertical {
+	background: rgba(255, 255, 255, 0.15);
+	transition-delay: 0s;
+}
+
+#SpicyCard-CardView:hover .simplebar-scrollbar:before {
+	opacity: 0.9 !important;
+	transition-delay: 0s !important;
 }
 
 /* Hide native scrollbar on SimpleBar wrapper */
