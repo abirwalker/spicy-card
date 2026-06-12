@@ -47,12 +47,16 @@
 }
 
 /* Hide native scrollbar on SimpleBar wrapper */
-.simplebar-content-wrapper::-webkit-scrollbar {
+#SpicyCard-CardView .simplebar-content-wrapper::-webkit-scrollbar {
 	display: none;
 }
-.simplebar-content-wrapper {
+#SpicyCard-CardView .simplebar-content-wrapper {
 	scrollbar-width: none;
 	-ms-overflow-style: none;
+}
+
+#SpicyCard-CardView .simplebar-track.simplebar-horizontal {
+	display: none !important;
 }
 
 [data-simplebar]:not(.simplebar-dragging) .simplebar-content-wrapper {
