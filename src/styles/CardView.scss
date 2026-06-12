@@ -12,6 +12,7 @@
 	background-color: var(--background-tinted-base) !important;
 	border-radius: 8px;
 	padding: 16px;
+	position: relative;
 
 	-ms-flex-direction: column;
 	flex-direction: column;
@@ -22,7 +23,7 @@
 
 	container-type: inline-size;
 
-	z-index: 1;
+	z-index: 2;
 
 	.Header {
 		display: flex;
@@ -247,6 +248,8 @@
 	background-color: var(--background-tinted-base) !important;
 	border-radius: 8px;
 	padding: 16px;
+	position: relative;
+	z-index: 2;
 
 	.NoLyricsMessage {
 		color: var(--spice-text);

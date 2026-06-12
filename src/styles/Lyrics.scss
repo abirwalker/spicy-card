@@ -6,28 +6,31 @@
 	height: 100cqh;
 	overflow-y: auto;
 	overflow-x: visible;
+	z-index: 2;
 	
 	/* Dynamic scrollbar sizing - adjust clamp() values below to fine-tune */
 	/* Format: clamp(MIN, PREFERRED, MAX) */
 	--scrollbar-width: clamp(10px, 2cqw, 14px);
 }
 
-/* SimpleBar scrollbar - show on hover only */
-.simplebar-track.simplebar-vertical {
+/* SimpleBar scrollbar - show on hover only, scoped to fix spicy-lyrics overrides as with both installed */
+/* Which causes Spicy Cards Scrollbar to disappear */
+#SpicyCard-CardView .simplebar-track.simplebar-vertical {
 	width: var(--scrollbar-width) !important;
 	background: transparent;
 	border-radius: calc(var(--scrollbar-width) / 2);
 	transition: background 0.2s 0.5s ease;
+	z-index: 2;
 }
 
-.simplebar-scrollbar:before {
-	background: rgba(255, 255, 255, 0.6);
+#SpicyCard-CardView .simplebar-scrollbar:before {
+	background: rgba(255, 255, 255, 0.6) !important;
 	border-radius: calc(var(--scrollbar-width) / 2);
 	opacity: 0 !important;
 	transition: opacity 0.2s 0.5s ease !important;
 }
 
-.simplebar-scrollbar.simplebar-visible:before {
+#SpicyCard-CardView .simplebar-scrollbar.simplebar-visible:before {
 	opacity: 0 !important;
 	transition-delay: 0.5s !important;
 }
@@ -40,6 +43,7 @@
 #SpicyCard-CardView:hover .simplebar-scrollbar:before {
 	opacity: 0.9 !important;
 	transition-delay: 0s !important;
+	transition-duration: 0.2s !important;
 }
 
 /* Hide native scrollbar on SimpleBar wrapper */
