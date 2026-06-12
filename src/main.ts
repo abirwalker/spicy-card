@@ -155,6 +155,11 @@ async function init() {
 
 		// Trigger immediately for the current song
 		onSongChange()
+
+		// Dev mode badge — small toast, auto-closes
+		if (process.env.NODE_ENV === "development") {
+			Spicetify.showNotification("Spicy Card — Dev Mode", false, 3000)
+		}
 	}
 
 	const DeferCheckForNowPlaying = () =>
