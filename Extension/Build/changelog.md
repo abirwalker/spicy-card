@@ -1,5 +1,28 @@
 # Changelog
 
+## [v1.0.1.1.111.111] - 2026-06-13
+
+### Added
+
+- Development mode badge — small toast notification appears on startup when running `npm run dev`, auto-closes after 3 seconds
+
+### Fixed
+
+- Scrollbar track now hidden by default, only visible on card hover
+- Scrollbar thumb only visible on card hover — no more showing during auto-scroll
+- Scrollbar compatibility with Spicy Lyrics extension — scoped all scrollbar rules under `#SpicyCard-CardView` to win CSS specificity battle against Spicy Lyrics global overrides
+- Last lyrics line getting chopped by bottom mask gradient — added scroll padding so content sits above the fade zone
+- Card content overflowing past bottom edge — added `overflow: hidden`
+- Horizontal scrollbar track hidden
+- Scrollbar thumb given `min-height: 80px` for better usability on short lyrics
+- NPV Ambience compatibility — boosted z-index on card and scrollbar to render above dynamic background overlays
+
+### Improved
+
+- Scrollbar track background fades in/out smoothly on hover instead of instantly appearing
+
+---
+
 ## [v1.0.1.1.111.1] - 2026-05-09
 
 ### Fixed
