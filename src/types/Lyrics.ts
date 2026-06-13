@@ -53,4 +53,5 @@ export type TransformedLyrics = {
 	NaturalAlignment: "Left" | "Right"
 	Language: string
 	RomanizedLanguage?: RomanizedLanguage
+	SongWriters?: string[]
 } & Lyrics

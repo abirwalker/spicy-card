@@ -81,6 +81,7 @@ export function adaptLyrics(response: any): TransformedLyrics {
 		NaturalAlignment: naturalAlignment as "Left" | "Right",
 		Language: language,
 		...(romanizedLanguage ? { RomanizedLanguage: romanizedLanguage } : {}),
+		...(response.SongWriters ? { SongWriters: response.SongWriters } : {}),
 	}
 
 	if (response.Type === "Static") {

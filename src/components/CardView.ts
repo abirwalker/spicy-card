@@ -45,6 +45,7 @@ const ExpandedControls = (hasRomanization: boolean) => `
 `.trim()
 
 const LyricsContainer = `<div class="LyricsContent"><div class="ContentContainer"></div></div>`
+const CreditsContainer = `<div class="Credits"></div>`
 
 export default class CardView implements Giveable {
 	private readonly Maid = new Maid()
@@ -59,6 +60,7 @@ export default class CardView implements Giveable {
 	private readonly RomanizeTooltip: any
 	private readonly LyricsContainer: HTMLDivElement
 	private readonly LyricsContentContainer: HTMLDivElement
+	private readonly CreditsElement: HTMLDivElement | null
 	private readonly TransformedLyrics: TransformedLyrics
 
 	constructor(insertAfter: HTMLDivElement, transformedLyrics: TransformedLyrics, romanizationReady: Promise<void> = Promise.resolve()) {
@@ -79,8 +81,16 @@ export default class CardView implements Giveable {
 				CloseButton: expandedControlsContainer.querySelector<HTMLButtonElement>("#Close")!,
 			}
 
-			this.LyricsContainer = this.Maid.Give(CreateElement<HTMLDivElement>(LyricsContainer))
-			this.LyricsContentContainer = this.LyricsContainer.querySelector<HTMLDivElement>(".ContentContainer")!
+		this.LyricsContainer = this.Maid.Give(CreateElement<HTMLDivElement>(LyricsContainer))
+		this.LyricsContentContainer = this.LyricsContainer.querySelector<HTMLDivElement>(".ContentContainer")!
+
+		// Credits — only created if SongWriters data exists
+		if (transformedLyrics.SongWriters && transformedLyrics.SongWriters.length > 0) {
+			this.CreditsElement = this.Maid.Give(CreateElement<HTMLDivElement>(CreditsContainer))
+			this.CreditsElement.textContent = `Written by: ${transformedLyrics.SongWriters.join(", ")}`
+		} else {
+			this.CreditsElement = null
+		}
 		}
 
 		// Tooltips (use Spicetify.Tippy if available)
@@ -214,8 +224,14 @@ export default class CardView implements Giveable {
 		if (isVisible) {
 			this.CreateLyricsRenderer()
 			this.Container.appendChild(this.LyricsContainer)
+			// Append credits inside the lyrics container so they scroll with lyrics
+			if (this.CreditsElement) {
+				const lyricsInner = this.LyricsContentContainer.querySelector(".Lyrics")
+				if (lyricsInner) lyricsInner.appendChild(this.CreditsElement)
+			}
 		} else {
 			this.LyricsContainer.remove()
+			if (this.CreditsElement) this.CreditsElement.remove()
 			this.Maid.Clean("LyricsRenderer")
 		}
 	}
