@@ -1,5 +1,19 @@
 # Changelog
 
+## [v1.0.1.1.111.11.1] - 2026-06-14
+
+### Added
+
+- Songwriter credits — displayed below lyrics when available from Spicy Lyrics API
+- Skeleton shimmer loading animation — dynamic bars with gradient fade, matches lyrics font size
+
+### Improved
+
+- Skeleton bars use `rem` units to scale with lyrics font size
+- Skeleton gradient fades top and bottom to blend smoothly into the card
+
+---
+
 ## [v1.0.1.1.111.111] - 2026-06-13
 
 ### Added
@@ -89,3 +103,4 @@
 - Static lyrics fallback
 - ~~Romanization support for Japanese, Korean, and Chinese~~ ~~(not working)~~
 - Powered by the Spicy Lyrics API
+
