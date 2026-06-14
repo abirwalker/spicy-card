@@ -1,9 +1,61 @@
 .LoadingLyricsCard {
+	--skel-bar-color: rgba(var(--spice-rgb-shadow, 0, 0, 0), 0.14);
+	--skel-shimmer-color: rgba(var(--spice-rgb-shadow, 0, 0, 0), 0.12);
+	--skel-bar-height: 1.5rem;
+	--skel-gap: 2.5rem;
+	--skel-fade-start: 85%;
+
+	position: relative;
 	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 14px;
 	height: 340px;
+	padding: 28px;
 	background-color: var(--background-tinted-base) !important;
 	border-radius: 8px !important;
-	opacity: 0.35;
+	overflow: hidden;
+
+	&::before {
+		content: "";
+		position: absolute;
+		left: 24px;
+		right: 24px;
+		top: 32px;
+		bottom: 2px;
+		background: repeating-linear-gradient(
+			180deg,
+			var(--skel-bar-color) 0px,
+			var(--skel-bar-color) var(--skel-bar-height),
+			transparent var(--skel-bar-height),
+			transparent var(--skel-gap)
+		);
+		mask-image: linear-gradient(180deg, transparent 0, black 100px, black calc(100% - 32px), transparent 100%);
+		-webkit-mask-image: linear-gradient(180deg, transparent 0, black 100px, black calc(100% - 32px), transparent 100%);
+	}
+
+	&::after {
+		content: "";
+		position: absolute;
+		left: 24px;
+		right: 24px;
+		top: 0px;
+		bottom: 2px;
+		width: calc(100% + 200px);
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			var(--skel-shimmer-color) 40%,
+			var(--skel-shimmer-color) 60%,
+			transparent 100%
+		);
+		animation: skeleton-shimmer 1.4s infinite ease-in-out;
+	}
+}
+
+@keyframes skeleton-shimmer {
+	0% { transform: translateX(-200px); }
+	100% { transform: translateX(0px); }
 }
 
 #SpicyCard-CardView {
