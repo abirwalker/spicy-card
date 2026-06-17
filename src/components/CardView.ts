@@ -44,6 +44,18 @@ const ExpandedControls = (hasRomanization: boolean) => `
 	</div>
 `.trim()
 
+const SyncButtonHTML = `
+	<button id="SyncToActive" class="SyncPillButton" style="display:none">
+		<svg role="img" height="14" width="14" aria-hidden="true" viewBox="0 0 16 16" fill="currentColor">
+			<rect x="1" y="5" width="2" height="6" rx="1"/>
+			<rect x="4.5" y="3" width="2" height="10" rx="1"/>
+			<rect x="8" y="1" width="2" height="14" rx="1"/>
+			<rect x="11.5" y="4" width="2" height="8" rx="1"/>
+		</svg>
+		<span>Sync</span>
+	</button>
+`
+
 const LyricsContainer = `<div class="LyricsContent"><div class="ContentContainer"></div></div>`
 const CreditsContainer = `<div class="Credits"></div>`
 
@@ -55,6 +67,7 @@ export default class CardView implements Giveable {
 	private readonly ExpandedControls: {
 		Container: HTMLDivElement
 		RomanizeButton: HTMLButtonElement | null
+		SyncButton: HTMLButtonElement
 		CloseButton: HTMLButtonElement
 	}
 	private readonly RomanizeTooltip: any
@@ -63,23 +76,25 @@ export default class CardView implements Giveable {
 	private readonly CreditsElement: HTMLDivElement | null
 	private readonly TransformedLyrics: TransformedLyrics
 
-	constructor(insertAfter: HTMLDivElement, transformedLyrics: TransformedLyrics, romanizationReady: Promise<void> = Promise.resolve()) {
+	constructor(insertAfter: HTMLDivElement, transformedLyrics: TransformedLyrics, romanizationReady: Promise<void> = Promise.resolve(), skipAnimation: boolean = false) {
 		this.TransformedLyrics = transformedLyrics
 
 		{
 			this.Container = this.Maid.Give(CreateElement<HTMLDivElement>(CardContainer))
+			if (skipAnimation) this.Container.style.animation = "none"
 			this.Header = this.Container.querySelector<HTMLDivElement>(".Header")!
 			this.ShowLyricsButton = this.Maid.Give(CreateElement<HTMLButtonElement>(ShowLyricsButton))
 
-			const hasRomanization = transformedLyrics.RomanizedLanguage !== undefined
-			const expandedControlsContainer = this.Maid.Give(
-				CreateElement<HTMLDivElement>(ExpandedControls(hasRomanization))
-			)
-			this.ExpandedControls = {
-				Container: expandedControlsContainer,
-				RomanizeButton: expandedControlsContainer.querySelector<HTMLButtonElement>("#Romanize"),
-				CloseButton: expandedControlsContainer.querySelector<HTMLButtonElement>("#Close")!,
-			}
+	const hasRomanization = transformedLyrics.RomanizedLanguage !== undefined
+		const expandedControlsContainer = this.Maid.Give(
+			CreateElement<HTMLDivElement>(ExpandedControls(hasRomanization))
+		)
+	this.ExpandedControls = {
+		Container: expandedControlsContainer,
+		RomanizeButton: expandedControlsContainer.querySelector<HTMLButtonElement>("#Romanize"),
+		SyncButton: this.Maid.Give(CreateElement<HTMLButtonElement>(SyncButtonHTML)),
+		CloseButton: expandedControlsContainer.querySelector<HTMLButtonElement>("#Close")!,
+	}
 
 		this.LyricsContainer = this.Maid.Give(CreateElement<HTMLDivElement>(LyricsContainer))
 		this.LyricsContentContainer = this.LyricsContainer.querySelector<HTMLDivElement>(".ContentContainer")!
@@ -98,9 +113,12 @@ export default class CardView implements Giveable {
 			const tippy = (Spicetify as any).Tippy
 			const tippyProps = (Spicetify as any).TippyProps ?? {}
 
-			if (tippy) {
-				const closeTooltip = tippy(this.ExpandedControls.CloseButton, { ...tippyProps, content: "Close Lyrics" })
-				this.Maid.Give(() => closeTooltip.destroy())
+		if (tippy) {
+			const closeTooltip = tippy(this.ExpandedControls.CloseButton, { ...tippyProps, content: "Close Lyrics" })
+			this.Maid.Give(() => closeTooltip.destroy())
+
+			const syncTooltip = tippy(this.ExpandedControls.SyncButton, { ...tippyProps, content: "Sync to current line" })
+			this.Maid.Give(() => syncTooltip.destroy())
 
 				if (this.ExpandedControls.RomanizeButton) {
 					const romanizeTooltip = tippy(this.ExpandedControls.RomanizeButton, { ...tippyProps, content: "Enable Romanization" })
@@ -196,10 +214,18 @@ export default class CardView implements Giveable {
 			"LyricsRenderer"
 		)
 
-		// Add ResizeObserver to watch for parent container resize
+		// Wire up sync-to-active button
+		const syncButton = this.ExpandedControls.SyncButton
 		if (renderer.Scroller) {
+			const scroller = renderer.Scroller
+
+			syncButton.addEventListener("click", () => scroller.ForceToActive())
+			scroller.OnAutoScrollStateChanged = (blocked) => {
+				syncButton.style.display = blocked ? "" : "none"
+			}
+
+			// Add ResizeObserver to watch for parent container resize
 			const resizeObserver = new ResizeObserver(() => {
-				// Force the renderer to recalculate dimensions
 				if (renderer.Scroller) {
 					renderer.Scroller.UpdateLyricHeights()
 					renderer.Scroller.ForceToActive()
@@ -223,6 +249,7 @@ export default class CardView implements Giveable {
 
 		if (isVisible) {
 			this.CreateLyricsRenderer()
+			this.LyricsContainer.appendChild(this.ExpandedControls.SyncButton)
 			this.Container.appendChild(this.LyricsContainer)
 			// Append credits inside the lyrics container so they scroll with lyrics
 			if (this.CreditsElement) {
@@ -230,6 +257,7 @@ export default class CardView implements Giveable {
 				if (lyricsInner) lyricsInner.appendChild(this.CreditsElement)
 			}
 		} else {
+			this.ExpandedControls.SyncButton.remove()
 			this.LyricsContainer.remove()
 			if (this.CreditsElement) this.CreditsElement.remove()
 			this.Maid.Clean("LyricsRenderer")
