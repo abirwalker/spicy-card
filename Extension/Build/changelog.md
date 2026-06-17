@@ -1,5 +1,20 @@
 # Changelog
 
+## [v1.0.1.1.111.111.1] - 2026-06-16
+
+### Fixed
+
+- Card disappearing on launch — rewrote init flow using self-healing `observeElement` pattern
+- Card disappearing when opening/closing queue — observer auto-detects anchor removal and re-insertion
+- Card disappearing on NPV view switches (recently played, On Repeat, etc.)
+
+### Improved
+
+- Replaced complex multi-maid orchestration with single `MutationObserver` on `document.body` — inspired by Lucid Lyrics ; Thanks hehe <3
+- Removed unused `Maid`, `Defer`, `Scheduler` (that complex multi-maid orchestration) imports from main entry point 
+
+---
+
 ## [v1.0.1.1.111.11.1] - 2026-06-14
 
 ### Added

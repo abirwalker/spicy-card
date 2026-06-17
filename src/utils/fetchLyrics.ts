@@ -2,6 +2,7 @@ import { TransformedLyrics } from '../types/Lyrics'
 import { Query } from './Query'
 import { adaptLyrics } from './adaptLyrics'
 import { processRomanization, detectCJKLanguage } from './processLyrics'
+import { getLyricsFromCache, setLyricsCache, setLyricsCacheNegative } from './LyricsCache'
 
 async function getAccessToken(): Promise<string> {
 	try {
@@ -23,6 +24,19 @@ export type LyricsResult = {
 }
 
 export async function fetchAndAdaptLyrics(trackId: string): Promise<LyricsResult | null> {
+	// Check cache first
+	const cached = getLyricsFromCache(trackId)
+	if (cached === null) {
+		return null
+	}
+	if (cached !== undefined) {
+		const romanizationReady = detectCJKLanguage(cached)
+			? processRomanization(cached).catch(() => {})
+			: Promise.resolve()
+
+		return { lyrics: adaptLyrics(cached), romanizationReady }
+	}
+
 	try {
 		const accessToken = await getAccessToken()
 
@@ -37,12 +51,18 @@ export async function fetchAndAdaptLyrics(trackId: string): Promise<LyricsResult
 			return null
 		}
 
-		if (result.httpStatus === 404) return null
+		if (result.httpStatus === 404) {
+			setLyricsCacheNegative(trackId)
+			return null
+		}
 
 		if (result.httpStatus !== 200) {
 			console.warn(`[SpicyCardView] Lyrics fetch returned status ${result.httpStatus}`)
 			return null
 		}
+
+		// Cache the raw API response
+		setLyricsCache(trackId, result.data)
 
 		// Start romanization in background — don't await.
 		// RomanizedText fields are populated in-place on the raw data object.

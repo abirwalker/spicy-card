@@ -1,212 +1,218 @@
 // Spicy Card View — main orchestrator
-// Adapted from Beautiful Lyrics LyricViews/mod.ts
-// Removed: page view routing, fullscreen button, WebGL background, analytics, playbar buttons
 // @ts-ignore this is temp fix
-import './styles/CardView.scss'
+import "./styles/CardView.scss";
 // @ts-ignore this is temp fix
-import './styles/simplebar.css'
+import "./styles/simplebar.css";
 // @ts-ignore this is temp fix
-import './styles/Lyrics.scss'
+import "./styles/Lyrics.scss";
 
-import { Maid } from './utils/Maid'
-import { Defer } from './utils/Scheduler'
-import { CreateElement, ResetRomanization } from './utils/Shared'
-import { fetchAndAdaptLyrics } from './utils/fetchLyrics'
-import CardView from './components/CardView'
-import NoLyricsCard from './components/NoLyricsCard'
+import { CreateElement, ResetRomanization } from "./utils/Shared";
+import { fetchAndAdaptLyrics } from "./utils/fetchLyrics";
+import { getLyricsFromCache } from "./utils/LyricsCache";
+import CardView from "./components/CardView";
+import NoLyricsCard from "./components/NoLyricsCard";
 
 // Load SpicyLyrics font
-const fontLink = document.createElement('link')
-fontLink.rel = 'stylesheet'
-fontLink.type = 'text/css'
-fontLink.href = 'https://fonts.spikerko.org/spicy-lyrics/source.css'
-document.head.appendChild(fontLink)
+const fontLink = document.createElement("link");
+fontLink.rel = "stylesheet";
+fontLink.type = "text/css";
+fontLink.href = "https://fonts.spikerko.org/spicy-lyrics/source.css";
+document.head.appendChild(fontLink);
 
 // DOM selectors
-const RightSidebar = ".Root__right-sidebar"
-const ContentsContainer = "aside, section.main-buddyFeed-container"
-// Explicitly avoid matching the spicy-dynamic-bg canvas injected by other extensions
-const CardInsertAnchor = ".main-nowPlayingView-nowPlayingWidget"
-const CardInsertAnchorFallback = ".main-nowPlayingView-coverArtContainer"
-const SpotifyCardViewQuery = ".main-nowPlayingView-section:not(:is(#SpicyCard-CardView)):has(.main-nowPlayingView-lyricsTitle)"
+const CardInsertAnchor = ".main-nowPlayingView-nowPlayingWidget";
+const CardInsertAnchorFallback = ".main-nowPlayingView-coverArtContainer";
+const SpotifyCardViewQuery =
+  ".main-nowPlayingView-section:not(:is(#SpicyCard-CardView)):has(.main-nowPlayingView-lyricsTitle)";
 
-const LoadingLyricsCard = `<div class="LoadingLyricsCard Loading"></div>`
+const LoadingLyricsCard = `<div class="LoadingLyricsCard Loading"></div>`;
+// Self-healing observeElement pattern (inspired by Lucid Lyrics, Thanks hehe)
 
-const GlobalMaid = new Maid()
+// ─── Self-healing DOM observer (from Lucid Lyrics) ───────────────────────────
+function observeElement(
+  selector: string,
+  onAdd: (el: Element, onRemove: (cb: () => void) => void) => void,
+): MutationObserver {
+  let current: Element | null = null;
+  let removeCb: (() => void) | null = null;
 
-const getCurrentTrackId = (): string | null => {
-	const uri = Spicetify.Player.data?.item?.uri
-	if (!uri || !uri.startsWith("spotify:track:")) return null
-	return uri.split(":")[2] ?? null
+  const registerOnRemove = (cb: () => void) => {
+    removeCb = cb;
+  };
+
+  const triggerRemove = () => {
+    if (current && removeCb) removeCb();
+    removeCb = null;
+    current = null;
+  };
+
+  const handleCheck = () => {
+    const el = document.body.querySelector(selector);
+    if (el && el !== current) {
+      if (current) triggerRemove();
+      current = el;
+      onAdd(el, registerOnRemove);
+    } else if (!el && current) {
+      triggerRemove();
+    }
+  };
+
+  const observer = new MutationObserver(handleCheck);
+  handleCheck();
+  observer.observe(document.body, { childList: true, subtree: true });
+  return observer;
 }
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const getCurrentTrackId = (): string | null => {
+  const uri = Spicetify.Player.data?.item?.uri;
+  if (!uri || !uri.startsWith("spotify:track:")) return null;
+  return uri.split(":")[2] ?? null;
+};
 
 const isStreamedTrack = (): boolean => {
-	const item = Spicetify.Player.data?.item
-	if (!item) return false
-	const type = item.type
-	const provider = (item as any).provider ?? ""
-	// Exclude DJ, podcasts, local files, videos
-	if (type === "unknown" && provider.startsWith("narration")) return false
-	if (type !== "track") return false
-	if ((item.metadata as any)?.is_local === "true") return false
-	return true
-}
+  const item = Spicetify.Player.data?.item;
+  if (!item) return false;
+  const type = item.type;
+  const provider = (item as any).provider ?? "";
+  if (type === "unknown" && provider.startsWith("narration")) return false;
+  if (type !== "track") return false;
+  if ((item.metadata as any)?.is_local === "true") return false;
+  return true;
+};
 
 const waitForSpicetify = (): Promise<void> => {
-	return new Promise((resolve) => {
-		const check = () => {
-			if (
-				Spicetify?.Player &&
-				Spicetify?.LocalStorage &&
-				Spicetify?.CosmosAsync &&
-				Spicetify.Player.data?.item  // wait until player has track data
-			) {
-				resolve()
-			} else {
-				setTimeout(check, 100)
-			}
-		}
-		check()
-	})
-}
+  return new Promise((resolve) => {
+    const check = () => {
+      if (
+        Spicetify?.Player &&
+        Spicetify?.LocalStorage &&
+        Spicetify?.CosmosAsync &&
+        Spicetify.Player.data?.item
+      ) {
+        resolve();
+      } else {
+        setTimeout(check, 100);
+      }
+    };
+    check();
+  });
+};
 
+const ANCHOR_SELECTOR = `${CardInsertAnchor}, ${CardInsertAnchorFallback}`;
+
+// ─── Init ────────────────────────────────────────────────────────────────────
 async function init() {
-	await waitForSpicetify()
+  await waitForSpicetify();
 
-	let sidebar: HTMLDivElement
-	let contentsContainer: HTMLDivElement | undefined
+  // Watch for the NPV anchor anywhere in the body
+  // When it appears → create card + song listener
+  // When Spotify removes it (queue, resize, re-render) → cleanup
+  // When it reappears → re-create everything
+  observeElement(ANCHOR_SELECTOR, (anchorEl, onRemove) => {
+    const cardAnchor = anchorEl as HTMLDivElement;
+    const cardContainer = cardAnchor.parentElement!;
 
-	const contentsContainerMaid = GlobalMaid.Give(new Maid())
-	const nowPlayingViewMaid = GlobalMaid.Give(new Maid())
+    // Suppress Spotify's native lyrics card
+    const CheckForNativeLyricsCard = () => {
+      const nativeCard =
+        cardContainer.querySelector<HTMLDivElement>(SpotifyCardViewQuery);
+      if (nativeCard !== null) nativeCard.style.display = "none";
+    };
+    CheckForNativeLyricsCard();
+    const nativeObserver = new MutationObserver(CheckForNativeLyricsCard);
+    nativeObserver.observe(cardContainer, { childList: true });
 
-	const CheckForNowPlaying = () => {
-		nowPlayingViewMaid.CleanUp()
+    // Song change handling
+    let currentFetchId = 0;
+    let lastFetchedTrackId: string | null = null;
 
-		// Try primary anchor first, then fallback
-		const cardAnchor = (
-			contentsContainer!.querySelector<HTMLDivElement>(CardInsertAnchor)
-			?? contentsContainer!.querySelector<HTMLDivElement>(CardInsertAnchorFallback)
-		)
-		if (cardAnchor === null) return
+    const onSongChange = async () => {
+      const trackId = getCurrentTrackId();
+      if (trackId && trackId === lastFetchedTrackId) return;
 
-		// Suppress Spotify's native lyrics card
-		const cardContainer = cardAnchor.parentElement!
-		const CheckForNativeLyricsCard = () => {
-			const nativeCard = cardContainer.querySelector<HTMLDivElement>(SpotifyCardViewQuery)
-			if (nativeCard !== null) nativeCard.style.display = "none"
-		}
-		CheckForNativeLyricsCard()
-		const containerObserver = nowPlayingViewMaid.Give(new MutationObserver(CheckForNativeLyricsCard))
-		containerObserver.observe(cardContainer, { childList: true })
+      // Clean previous card
+      existingCard?.Destroy();
+      existingCard = null;
 
-		// Handle song changes
-		let currentFetchId = 0
+      ResetRomanization();
 
-		const onSongChange = async () => {
-			nowPlayingViewMaid.Clean("Card")
+      if (!isStreamedTrack()) {
+        existingCard = new NoLyricsCard(cardAnchor);
+        return;
+      }
 
-			// Always reset romanization on song change — lyrics start in original state
-			ResetRomanization()
+      let fetchTrackId = trackId;
+      if (!fetchTrackId) {
+        await new Promise<void>((resolve) => {
+          const interval = setInterval(() => {
+            fetchTrackId = getCurrentTrackId();
+            if (fetchTrackId) {
+              clearInterval(interval);
+              resolve();
+            }
+          }, 100);
+          setTimeout(() => {
+            clearInterval(interval);
+            resolve();
+          }, 3000);
+        });
+      }
+      if (!fetchTrackId) return;
 
-			if (!isStreamedTrack()) {
-				nowPlayingViewMaid.Give(new NoLyricsCard(cardAnchor), "Card")
-				return
-			}
+      const fetchId = ++currentFetchId;
 
-			// Wait for track ID to be available (can be null briefly on first load)
-			let trackId = getCurrentTrackId()
-			if (!trackId) {
-				await new Promise<void>(resolve => {
-					const interval = setInterval(() => {
-						trackId = getCurrentTrackId()
-						if (trackId) { clearInterval(interval); resolve() }
-					}, 100)
-					// Give up after 3s
-					setTimeout(() => { clearInterval(interval); resolve() }, 3000)
-				})
-			}
-			if (!trackId) return
+      const cached = getLyricsFromCache(fetchTrackId);
+      const isCacheHit = cached !== undefined;
 
-			// Show loading placeholder
-			const loadingCard = nowPlayingViewMaid.Give(
-				CreateElement<HTMLDivElement>(LoadingLyricsCard), "Card"
-			)
-			cardAnchor.after(loadingCard)
+      let loadingCard: HTMLDivElement | undefined;
+      if (!isCacheHit) {
+        loadingCard = CreateElement<HTMLDivElement>(LoadingLyricsCard);
+        cardAnchor.after(loadingCard);
+      }
 
-			const fetchId = ++currentFetchId
-			const result = await fetchAndAdaptLyrics(trackId)
+      const result = await fetchAndAdaptLyrics(fetchTrackId);
 
-			// Discard stale results if track changed during fetch
-			if (fetchId !== currentFetchId) return
+      if (fetchId !== currentFetchId) return;
 
-			nowPlayingViewMaid.Clean("Card")
+      // Clean loading card
+      loadingCard?.remove();
 
-			if (result) {
-				nowPlayingViewMaid.Give(new CardView(cardAnchor, result.lyrics, result.romanizationReady), "Card")
-			} else {
-				nowPlayingViewMaid.Give(new NoLyricsCard(cardAnchor), "Card")
-			}
-		}
+      if (result) {
+        lastFetchedTrackId = fetchTrackId;
+        existingCard = new CardView(
+          cardAnchor,
+          result.lyrics,
+          result.romanizationReady,
+          !!loadingCard,
+        );
+      } else {
+        existingCard = new NoLyricsCard(cardAnchor);
+      }
+    };
 
-		nowPlayingViewMaid.Give(() => { currentFetchId++ }) // Cancel any in-flight fetch on cleanup
+    let existingCard: CardView | NoLyricsCard | null = null;
 
-		Spicetify.Player.addEventListener("songchange", onSongChange)
-		nowPlayingViewMaid.Give(() => Spicetify.Player.removeEventListener("songchange", onSongChange))
+    const songChangeHandler = () => onSongChange();
+    Spicetify.Player.addEventListener("songchange", songChangeHandler);
 
-		// Trigger immediately for the current song
-		onSongChange()
+    // Trigger immediately for the current song
+    onSongChange();
 
-		// Dev mode badge — small toast, auto-closes
-		if (process.env.NODE_ENV === "development") {
-			Spicetify.showNotification("Spicy Card — Dev Mode", false, 3000)
-		}
-	}
+    // Dev mode badge
+    if (process.env.NODE_ENV === "development") {
+      Spicetify.showNotification("Spicy Card — Dev Mode", false, 3000);
+    }
 
-	const DeferCheckForNowPlaying = () =>
-		GlobalMaid.Give(Defer(CheckForNowPlaying), "CheckForNowPlaying")
-
-	const CheckForContentsContainer = () => {
-		contentsContainerMaid.CleanUp()
-		nowPlayingViewMaid.CleanUp()
-
-		contentsContainer = (sidebar.querySelector<HTMLDivElement>(ContentsContainer) ?? undefined)
-		if (contentsContainer === undefined) return
-
-		CheckForNowPlaying()
-
-		// Re-check when song changes (NPV content may reload)
-		Spicetify.Player.addEventListener("songchange", DeferCheckForNowPlaying)
-		contentsContainerMaid.Give(() =>
-			Spicetify.Player.removeEventListener("songchange", DeferCheckForNowPlaying)
-		)
-	}
-
-	const DeferCheckForContentsContainer = () =>
-		GlobalMaid.Give(Defer(CheckForContentsContainer), "CheckForContentsContainer")
-
-	const CheckForSidebar = () => {
-		const newSidebar = document.querySelector<HTMLDivElement>(RightSidebar)
-		if (newSidebar === null) {
-			GlobalMaid.Give(Defer(CheckForSidebar), "CheckForSidebar")
-			return
-		}
-		sidebar = newSidebar
-
-		const sidebarChildObserver = GlobalMaid.Give(new MutationObserver(DeferCheckForContentsContainer))
-		CheckForContentsContainer()
-
-		sidebarChildObserver.observe(sidebar, { childList: true })
-		for (const element of sidebar.children) {
-			if (
-				(element instanceof HTMLDivElement)
-				&& ((element.children.length === 0) || (element.querySelector(ContentsContainer) !== null))
-			) {
-				sidebarChildObserver.observe(element, { childList: true })
-			}
-		}
-	}
-
-	CheckForSidebar()
+    // Cleanup when anchor is removed from DOM
+    onRemove(() => {
+      Spicetify.Player.removeEventListener("songchange", songChangeHandler);
+      nativeObserver.disconnect();
+      currentFetchId++; // cancel in-flight fetch
+      existingCard?.Destroy();
+      existingCard = null;
+    });
+  });
 }
 
-init()
+init();

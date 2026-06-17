@@ -11,7 +11,7 @@ export type VocalGroups<V extends (BaseVocals | SyncedVocals)> = VocalGroup<V>[]
 
 const DistanceToMaximumBlur = 4
 const BlurScale = 1.25
-const UserScrollingStopsAfter = 0.75
+const UserScrollingStopsAfter = 3
 const AutoScrollingStopsAfter = (1 / 30)
 
 const GetTotalElementHeight = (element: HTMLElement): number => {
@@ -32,6 +32,7 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 	private AutoScrolling: boolean = false
 	private LastActiveVocalIndex: number = 0
 	private LyricsEnded: boolean = false
+	public OnAutoScrollStateChanged?: (blocked: boolean) => void
 
 	public constructor(
 		scrollContainer: HTMLDivElement, lyricsContainer: HTMLDivElement,
@@ -65,6 +66,7 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 		if (this.AutoScrollBlocked !== blocked) {
 			if (blocked) { this.AutoScrollBlocked = true; this.ScrollContainer.classList.add("UserScrolling") }
 			else { this.AutoScrollBlocked = false; this.ScrollContainer.classList.remove("UserScrolling") }
+			this.OnAutoScrollStateChanged?.(blocked)
 		}
 	}
 
@@ -198,6 +200,8 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 		}
 		this.MoveToActiveLyrics()
 	}
+
+	public IsAutoScrollBlocked() { return this.AutoScrollBlocked }
 
 	public ForceToTop() { this.ToggleAutoScrollBlock(false); this.ScrollTo(0) }
 	public Destroy() { this.Maid.Destroy() }
