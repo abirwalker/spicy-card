@@ -1,6 +1,6 @@
-// Client-side romanization — mirrors Spicy Lyrics' ProcessLyrics.ts exactly.
+// Client-side romanization: mirrors Spicy Lyrics' ProcessLyrics.ts exactly.
 // All packages loaded from Spicy Lyrics' public CDN (pkgs.spikerko.org).
-// DO NOT use npm packages for romanization — they are Node.js only and won't work in browser.
+// DO NOT use npm packages for romanization: they are Node.js only and won't work in browser.
 
 import Kuroshiro from 'kuroshiro'
 import * as KuromojiAnalyzer from './KuromojiAnalyzer'
@@ -12,7 +12,7 @@ const KanaTest    = /[\u3040-\u309F\u30A0-\u30FF]/  // hiragana/katakana
 const KoreanTest  = /[\uAC00-\uD7AF\u1100-\u11FF]/  // hangul
 const ChineseTest = /[\u4E00-\u9FFF]/               // CJK
 
-// Kuroshiro — init once, reuse
+// Kuroshiro: init once, reuse
 const romajiConverter = new Kuroshiro()
 const romajiReady = romajiConverter.init(KuromojiAnalyzer)
 

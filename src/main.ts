@@ -1,9 +1,6 @@
-// Spicy Card View — main orchestrator
-// @ts-ignore this is temp fix
+// Spicy Card View: main orchestrator
 import "./styles/CardView.scss";
-// @ts-ignore this is temp fix
 import "./styles/simplebar.css";
-// @ts-ignore this is temp fix
 import "./styles/Lyrics.scss";
 
 import { CreateElement, ResetRomanization } from "./utils/Shared";
@@ -201,7 +198,7 @@ async function init() {
 
     // Dev mode badge
     if (process.env.NODE_ENV === "development") {
-      Spicetify.showNotification("Spicy Card — Dev Mode", false, 3000);
+      Spicetify.showNotification("Spicy Card: Dev Mode", false, 3000);
     }
 
     // Cleanup when anchor is removed from DOM

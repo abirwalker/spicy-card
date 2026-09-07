@@ -62,7 +62,9 @@ function getEndTime(content: any[]): number {
 	return last.EndTime ?? 0
 }
 
-export function adaptLyrics(response: any): TransformedLyrics {
+export function adaptLyrics(response: any): TransformedLyrics | null {
+	if (!response || !response.Type) return null
+
 	// Try API-provided language first, fall back to content detection
 	let romanizedLanguage = response.IncludesRomanization
 		? toRomanizedLanguage(response.Language ?? response.LanguageISO2)
@@ -108,5 +110,6 @@ export function adaptLyrics(response: any): TransformedLyrics {
 		}
 	}
 
-	throw new Error(`[SpicyCardView] Unknown lyrics type: ${response.Type}`)
+	console.warn(`[SpicyCardView] Unknown or unsupported lyrics type: ${response?.Type}`)
+	return null
 }

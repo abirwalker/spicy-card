@@ -1,4 +1,4 @@
-// NoLyricsCard — shown when a track has no lyrics available
+// NoLyricsCard: shown when a track has no lyrics available
 // Follows the same CreateElement + Maid pattern as CardView.ts
 
 import { Maid, Giveable } from '../utils/Maid'

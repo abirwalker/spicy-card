@@ -46,7 +46,7 @@ export const CreateElement = <E = HTMLElement>(text: string) => {
 export const ToggleLanguageRomanization = (language: RomanizedLanguage, isRomanized: boolean) => {
 	if (Store.Items.RomanizedLanguages[language] !== isRomanized) {
 		Store.Items.RomanizedLanguages[language] = isRomanized
-		// Don't persist romanization — it resets per song
+		// Don't persist romanization, it resets per song
 		LanguageRomanizationChangedSignal.Fire(language, isRomanized)
 	}
 }

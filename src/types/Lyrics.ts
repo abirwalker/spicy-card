@@ -47,7 +47,7 @@ export type SyllableSyncedLyrics = TimeMetadata & {
 
 export type Lyrics = StaticSyncedLyrics | LineSyncedLyrics | SyllableSyncedLyrics
 
-// TransformedLyrics — what the LyricsRenderer consumes
+// TransformedLyrics: what the LyricsRenderer consumes
 export type RomanizedLanguage = "Chinese" | "Japanese" | "Korean"
 export type TransformedLyrics = {
 	NaturalAlignment: "Left" | "Right"

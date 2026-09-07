@@ -99,7 +99,7 @@ export default class CardView implements Giveable {
 		this.LyricsContainer = this.Maid.Give(CreateElement<HTMLDivElement>(LyricsContainer))
 		this.LyricsContentContainer = this.LyricsContainer.querySelector<HTMLDivElement>(".ContentContainer")!
 
-		// Credits — only created if SongWriters data exists
+		// Credits: only created if SongWriters data exists
 		if (transformedLyrics.SongWriters && transformedLyrics.SongWriters.length > 0) {
 			this.CreditsElement = this.Maid.Give(CreateElement<HTMLDivElement>(CreditsContainer))
 			this.CreditsElement.textContent = `Written by: ${transformedLyrics.SongWriters.join(", ")}`

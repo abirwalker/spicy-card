@@ -30,11 +30,14 @@ export async function fetchAndAdaptLyrics(trackId: string): Promise<LyricsResult
 		return null
 	}
 	if (cached !== undefined) {
+		const lyrics = adaptLyrics(cached)
+		if (!lyrics) return null
+
 		const romanizationReady = detectCJKLanguage(cached)
 			? processRomanization(cached).catch(() => {})
 			: Promise.resolve()
 
-		return { lyrics: adaptLyrics(cached), romanizationReady }
+		return { lyrics, romanizationReady }
 	}
 
 	try {
@@ -64,7 +67,7 @@ export async function fetchAndAdaptLyrics(trackId: string): Promise<LyricsResult
 		// Cache the raw API response
 		setLyricsCache(trackId, result.data)
 
-		// Start romanization in background — don't await.
+		// Start romanization in background: don't await.
 		// RomanizedText fields are populated in-place on the raw data object.
 		// romanizationReady resolves when done so CardView can wait on it if needed.
 		const romanizationReady = detectCJKLanguage(result.data)
@@ -73,7 +76,10 @@ export async function fetchAndAdaptLyrics(trackId: string): Promise<LyricsResult
 			  )
 			: Promise.resolve()
 
-		return { lyrics: adaptLyrics(result.data), romanizationReady }
+		const lyrics = adaptLyrics(result.data)
+		if (!lyrics) return null
+
+		return { lyrics, romanizationReady }
 	} catch (error) {
 		console.error("[SpicyCardView] fetchAndAdaptLyrics error:", error)
 		return null

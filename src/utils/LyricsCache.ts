@@ -31,7 +31,7 @@ function storageSet(trackId: string, entry: CacheEntry): void {
 	try {
 		Spicetify.LocalStorage.set(CACHE_PREFIX + trackId, JSON.stringify(entry))
 	} catch {
-		// Storage full or blocked — silently ignore
+		// Storage full or blocked, silently ignore
 	}
 }
 

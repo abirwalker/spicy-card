@@ -1,5 +1,5 @@
 // Adapted from spicy-lyrics/src/utils/Lyrics/KuromojiAnalyzer.ts
-// Uses Spicy Lyrics' public CDN — same approach, same URLs.
+// Uses Spicy Lyrics' public CDN: same approach, same URLs.
 
 const KUROMOJI_URL = "https://pkgs.spikerko.org/Kuromoji/Kuromoji@1.0.0.js"
 const KUROMOJI_DIC = "https://kuromoji.pkgs.spikerko.org"
@@ -10,7 +10,11 @@ async function loadKuromoji(): Promise<void> {
 	if ((window as any).kuromoji) return
 	const url = KUROMOJI_URL
 	await import(url)
+	const startTime = Date.now()
 	while (!(window as any).kuromoji) {
+		if (Date.now() - startTime > 5000) {
+			throw new Error("[SpicyCardView] Timeout waiting for Kuromoji to initialize")
+		}
 		await new Promise(r => setTimeout(r, 50))
 	}
 }
