@@ -7,6 +7,7 @@ import InterludeVisual from './Interlude'
 import StaticVocals from './StaticVocals'
 import LineVocals from './LineVocals'
 import SyllableVocals from './SyllableVocals'
+import { getSmoothProgress } from '../../utils/PlayerPosition'
 
 export default class LyricsRenderer implements Giveable {
 	private Maid: Maid = new Maid()
@@ -95,12 +96,15 @@ export default class LyricsRenderer implements Giveable {
 			this.Scroller = scroller
 
 			let justSkippedByVocal = false
-			// Timestamp-driven animation loop
-			let lastTimestamp = -1
+			let lastFrameTime = -1
+			let lastAudioTimestamp = -1
 			const animationLoop = () => {
-				const currentTimestamp = (Spicetify.Player.getProgress() / 1000)
-				const deltaTime = (lastTimestamp < 0) ? (1 / 60) : Math.min(currentTimestamp - lastTimestamp, 0.1)
-				const skipped = (lastTimestamp >= 0 && Math.abs(currentTimestamp - lastTimestamp) > 0.5) ? true : undefined
+				const now = performance.now()
+				const deltaTime = (lastFrameTime < 0) ? (1 / 60) : Math.min((now - lastFrameTime) / 1000, 0.05)
+				lastFrameTime = now
+
+				const currentTimestamp = (getSmoothProgress() / 1000)
+				const skipped = (lastAudioTimestamp >= 0 && Math.abs(currentTimestamp - lastAudioTimestamp) > 0.5) ? true : undefined
 
 				for (const vocalGroup of vocalGroups) {
 					for (const vocal of vocalGroup.Vocals) {
@@ -111,7 +115,7 @@ export default class LyricsRenderer implements Giveable {
 				if (skipped) scroller.ForceToActive(justSkippedByVocal || undefined)
 				if (skipped && justSkippedByVocal) justSkippedByVocal = false
 
-				lastTimestamp = currentTimestamp
+				lastAudioTimestamp = currentTimestamp
 				this.Maid.Give(OnPreRender(animationLoop), "AnimationLoop")
 			}
 			this.Maid.Give(OnPreRender(animationLoop), "AnimationLoop")

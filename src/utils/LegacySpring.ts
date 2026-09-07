@@ -5,16 +5,30 @@ const Exp = Math.exp
 const Sin = Math.sin
 const Cos = Math.cos
 const Sqrt = Math.sqrt
-const SleepEpsilon = 0.1
+const SleepPositionEpsilon = 1e-4
+const SleepVelocityEpsilon = 1e-3
 
 class Spring {
 	private Velocity: number
 	private DampingRatio: number
 	private Frequency: number
 	private Sleeping: boolean = true
+	private _final: number
 
 	public Position: number
-	public Final: number
+
+	public get Final(): number {
+		return this._final
+	}
+
+	public set Final(value: number) {
+		if (this._final !== value) {
+			this._final = value
+			if (Math.abs(value - this.Position) > SleepPositionEpsilon) {
+				this.Sleeping = false
+			}
+		}
+	}
 
 	public constructor(initial: number, dampingRatio: number, frequency: number) {
 		if ((dampingRatio * frequency) < 0) throw new Error("Spring does not converge.")
@@ -22,7 +36,8 @@ class Spring {
 		this.Frequency = frequency
 		this.Velocity = 0
 		this.Position = initial
-		this.Final = initial
+		this._final = initial
+		this.Sleeping = true
 	}
 
 	public Update(deltaTime: number): number {
@@ -72,13 +87,19 @@ class Spring {
 
 		this.Position = newPosition
 		this.Velocity = newVelocity
-		this.Sleeping = (Math.abs(final - newPosition) <= SleepEpsilon)
-		return newPosition
+		if (Math.abs(final - newPosition) <= SleepPositionEpsilon && Math.abs(newVelocity) <= SleepVelocityEpsilon) {
+			this.Position = final
+			this.Velocity = 0
+			this.Sleeping = true
+		} else {
+			this.Sleeping = false
+		}
+		return this.Position
 	}
 
 	public Set(value: number) {
 		this.Position = value
-		this.Final = value
+		this._final = value
 		this.Velocity = 0
 		this.Sleeping = true
 	}

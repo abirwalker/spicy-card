@@ -111,14 +111,159 @@ function parseLanguage(ttml: string): string {
 	return match ? match[1].toLowerCase() : "und"
 }
 
-const P_PATTERN = /<p\s+([^>]*)begin="([^"]+)"(?:\s+[^>]*end="([^"]+)")?[^>]*>([\s\S]*?)<\/p>/gi
-const SPAN_PATTERN = /<span\s+[^>]*begin="([^"]+)"(?:\s+[^>]*end="([^"]+)")?[^>]*>([\s\S]*?)<\/span>(\s*)/gi
+function isWordBoundary(rawContent: string, trailingSpace: string, nextRawContent: string | null): boolean {
+	if (nextRawContent === null) return true
+	if (/\s+$/.test(rawContent) || trailingSpace.length > 0) return true
+	if (/^\s+/.test(nextRawContent)) return true
+	if (/[\s,.!?;:\-\u2014\u3001\u3002\uFF01\uFF1F]+$/.test(rawContent.trim())) return true
+	return false
+}
+
+type ParsedSpansResult = {
+	leadSyllables: SyllableMetadata[]
+	backgroundVocalParts: { StartTime: number; EndTime: number; Syllables: SyllableMetadata[] }[]
+}
+
+function parseSimpleSpans(content: string, defaultBegin: number, defaultEnd: number): SyllableMetadata[] {
+	const SPAN_RE = /<span([^>]*?)>([\s\S]*?)<\/span>(\s*)/gi
+	const rawList: { rawInner: string; trailingSpace: string; begin: number; end: number }[] = []
+
+	for (const m of content.matchAll(SPAN_RE)) {
+		const attrs = m[1] ?? ""
+		const rawInner = m[2] ?? ""
+		const trailingSpace = m[3] ?? ""
+		const beginMatch = attrs.match(/begin="([^"]+)"/i)
+		const endMatch = attrs.match(/end="([^"]+)"/i)
+		const begin = beginMatch ? parseTime(beginMatch[1]) : defaultBegin
+		let end = endMatch ? parseTime(endMatch[1]) : defaultEnd
+		if (end <= begin) end = begin + 0.05
+
+		rawList.push({ rawInner, trailingSpace, begin, end })
+	}
+
+	const syllables: SyllableMetadata[] = []
+	for (let i = 0; i < rawList.length; i++) {
+		const curr = rawList[i]
+		const cleanText = decodeHtmlEntities(curr.rawInner.replace(/<[^>]+>/g, "")).trim()
+		if (!cleanText) continue
+
+		const nextRaw = i + 1 < rawList.length ? rawList[i + 1].rawInner : null
+		const isBoundary = isWordBoundary(curr.rawInner, curr.trailingSpace, nextRaw)
+
+		syllables.push({
+			StartTime: curr.begin,
+			EndTime: curr.end,
+			Text: cleanText,
+			IsPartOfWord: !isBoundary
+		})
+	}
+	return syllables
+}
+
+function parseTTMLSpans(pContent: string, lineBegin: number, lineEnd: number): ParsedSpansResult {
+	const backgroundVocalParts: { StartTime: number; EndTime: number; Syllables: SyllableMetadata[] }[] = []
+	const rawLeadList: { rawInner: string; trailingSpace: string; begin: number; end: number }[] = []
+
+	let i = 0
+	while (i < pContent.length) {
+		const spanStart = pContent.indexOf("<span", i)
+		if (spanStart === -1) break
+
+		const openTagEnd = pContent.indexOf(">", spanStart)
+		if (openTagEnd === -1) break
+
+		const openTag = pContent.slice(spanStart, openTagEnd + 1)
+		const isBg = /ttm:role="x-bg"/i.test(openTag)
+
+		if (isBg) {
+			let depth = 1
+			let cur = openTagEnd + 1
+			let bgInner = ""
+			while (cur < pContent.length && depth > 0) {
+				const nextOpen = pContent.indexOf("<span", cur)
+				const nextClose = pContent.indexOf("</span>", cur)
+
+				if (nextClose === -1) break
+
+				if (nextOpen !== -1 && nextOpen < nextClose) {
+					depth++
+					cur = nextOpen + 5
+				} else {
+					depth--
+					if (depth === 0) {
+						bgInner = pContent.slice(openTagEnd + 1, nextClose)
+						i = nextClose + 7
+					} else {
+						cur = nextClose + 7
+					}
+				}
+			}
+
+			const bgSpans = parseSimpleSpans(bgInner, lineBegin, lineEnd)
+			if (bgSpans.length > 0) {
+				backgroundVocalParts.push({
+					StartTime: bgSpans[0].StartTime,
+					EndTime: bgSpans[bgSpans.length - 1].EndTime,
+					Syllables: bgSpans
+				})
+			}
+		} else {
+			const closeTag = pContent.indexOf("</span>", openTagEnd)
+			if (closeTag === -1) break
+
+			const innerText = pContent.slice(openTagEnd + 1, closeTag)
+			let afterClose = closeTag + 7
+			let trailingSpace = ""
+			while (afterClose < pContent.length && /\s/.test(pContent[afterClose])) {
+				trailingSpace += pContent[afterClose]
+				afterClose++
+			}
+
+			const beginMatch = openTag.match(/begin="([^"]+)"/i)
+			const endMatch = openTag.match(/end="([^"]+)"/i)
+			const begin = beginMatch ? parseTime(beginMatch[1]) : lineBegin
+			let end = endMatch ? parseTime(endMatch[1]) : lineEnd
+			if (end <= begin) end = begin + 0.05
+
+			rawLeadList.push({
+				rawInner: innerText,
+				trailingSpace,
+				begin,
+				end
+			})
+
+			i = afterClose
+		}
+	}
+
+	const leadSyllables: SyllableMetadata[] = []
+	for (let idx = 0; idx < rawLeadList.length; idx++) {
+		const curr = rawLeadList[idx]
+		const cleanText = decodeHtmlEntities(curr.rawInner.replace(/<[^>]+>/g, "")).trim()
+		if (!cleanText) continue
+
+		const nextRaw = idx + 1 < rawLeadList.length ? rawLeadList[idx + 1].rawInner : null
+		const isBoundary = isWordBoundary(curr.rawInner, curr.trailingSpace, nextRaw)
+
+		leadSyllables.push({
+			StartTime: curr.begin,
+			EndTime: curr.end,
+			Text: cleanText,
+			IsPartOfWord: !isBoundary
+		})
+	}
+
+	return { leadSyllables, backgroundVocalParts }
+}
+
+const P_PATTERN = /<p([^>]*?)>([\s\S]*?)<\/p>/gi
 
 type ParsedRawLine = {
 	startTime: number
 	endTime: number
 	oppositeAligned: boolean
 	syllables: SyllableMetadata[]
+	backgroundVocalParts: { StartTime: number; EndTime: number; Syllables: SyllableMetadata[] }[]
 	plainText: string
 }
 
@@ -134,47 +279,34 @@ export function parseTTML(ttmlXml: string): TransformedLyrics | null {
 
 	for (const pMatch of ttmlXml.matchAll(P_PATTERN)) {
 		const pAttrs = pMatch[1] ?? ""
-		const lineBegin = parseTime(pMatch[2])
-		const lineEnd = pMatch[3] ? parseTime(pMatch[3]) : lineBegin
-		const content = pMatch[4] ?? ""
+		const content = pMatch[2] ?? ""
+
+		const beginMatch = pAttrs.match(/begin="([^"]+)"/i)
+		const endMatch = pAttrs.match(/end="([^"]+)"/i)
+		const lineBegin = beginMatch ? parseTime(beginMatch[1]) : 0
+		const lineEnd = endMatch ? parseTime(endMatch[1]) : lineBegin + 3
 
 		const oppositeAligned = /ttm:agent="v2"/i.test(pAttrs)
 
-		const syllables: SyllableMetadata[] = []
-		const spanMatches = [...content.matchAll(SPAN_PATTERN)]
-
-		if (spanMatches.length > 0) {
-			for (let i = 0; i < spanMatches.length; i++) {
-				const sm = spanMatches[i]
-				const spanBegin = parseTime(sm[1])
-				const spanEnd = sm[2] ? parseTime(sm[2]) : lineEnd
-				const rawWord = decodeHtmlEntities((sm[3] ?? "").replace(/<[^>]+>/g, "")).trim()
-				const trailingSpace = sm[4] ?? ""
-
-				if (rawWord.length > 0) {
-					const isPartOfWord = (i < spanMatches.length - 1) && (trailingSpace.length === 0)
-					syllables.push({
-						StartTime: spanBegin,
-						EndTime: spanEnd,
-						Text: rawWord,
-						IsPartOfWord: isPartOfWord
-					})
-				}
-			}
-		}
-
+		const { leadSyllables, backgroundVocalParts } = parseTTMLSpans(content, lineBegin, lineEnd)
 		const plainText = decodeHtmlEntities(content.replace(/<[^>]+>/g, "")).trim()
 
-		if (syllables.length > 1) {
+		if (leadSyllables.length > 1 || backgroundVocalParts.length > 0) {
 			hasSyllableTiming = true
 		}
 
-		if (syllables.length > 0 || plainText.length > 0) {
+		if (leadSyllables.length > 0 || plainText.length > 0) {
+			const effectiveStart = leadSyllables.length > 0 ? leadSyllables[0].StartTime : lineBegin
+			const effectiveEnd = leadSyllables.length > 0
+				? leadSyllables[leadSyllables.length - 1].EndTime
+				: Math.max(lineEnd, lineBegin + 0.5)
+
 			rawLines.push({
-				startTime: lineBegin,
-				endTime: lineEnd > lineBegin ? lineEnd : (syllables.length > 0 ? syllables[syllables.length - 1].EndTime : lineBegin + 3),
+				startTime: effectiveStart,
+				endTime: effectiveEnd,
 				oppositeAligned,
-				syllables,
+				syllables: leadSyllables,
+				backgroundVocalParts,
 				plainText
 			})
 		}
@@ -223,15 +355,21 @@ export function parseTTML(ttmlXml: string): TransformedLyrics | null {
 					IsPartOfWord: false
 				}]
 
-			content.push({
+			const lineLeadStart = line.syllables.length > 0 ? line.syllables[0].StartTime : line.startTime
+			const lineLeadEnd = line.syllables.length > 0 ? line.syllables[line.syllables.length - 1].EndTime : line.endTime
+
+			const vocalSet: SyllableVocalSet = {
 				Type: "Vocal",
 				OppositeAligned: line.oppositeAligned,
 				Lead: {
-					StartTime: line.startTime,
-					EndTime: line.endTime,
+					StartTime: lineLeadStart,
+					EndTime: lineLeadEnd,
 					Syllables: syllables
-				}
-			})
+				},
+				...(line.backgroundVocalParts.length > 0 ? { Background: line.backgroundVocalParts } : {})
+			}
+
+			content.push(vocalSet)
 		}
 
 		const result: SyllableSyncedLyrics & typeof baseHeader = {

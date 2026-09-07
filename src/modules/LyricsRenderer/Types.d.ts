@@ -14,6 +14,10 @@ type Springs = {
 type LiveText = {
 	Object: HTMLSpanElement
 	Springs: Springs
+	LastProgress?: number
+	LastTransform?: string
+	LastShadowOpacity?: number
+	LastBlurRadius?: number
 }
 type LyricState = "Idle" | "Active" | "Sung"
 

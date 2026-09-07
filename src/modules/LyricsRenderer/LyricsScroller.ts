@@ -32,6 +32,9 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 	private AutoScrolling: boolean = false
 	private LastActiveVocalIndex: number = 0
 	private LyricsEnded: boolean = false
+	private LyricsContainerMarginTop: number = 0
+	private LyricsOffset: number = 0
+	private ScrollViewportHeight: number = 0
 	public OnAutoScrollStateChanged?: (blocked: boolean) => void
 
 	public constructor(
@@ -92,6 +95,11 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 	}
 
 	public UpdateLyricHeights() {
+		this.ScrollViewportHeight = this.ScrollContainer.offsetHeight
+		const lyricsContainerStyle = globalThis.getComputedStyle(this.LyricsContainer)
+		this.LyricsContainerMarginTop = parseInt(lyricsContainerStyle.marginTop || "0") || 0
+		this.LyricsOffset = (lyricsContainerStyle.getPropertyValue("--use-offset") === "1") ? (parseInt(lyricsContainerStyle.lineHeight || "0") || 0) : 0
+
 		this.GroupDimensions = []
 		let totalHeight = 0
 		for (const vocalGroup of this.VocalGroups) {
@@ -136,10 +144,9 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 		if (redetermineBlur) this.DetermineLyricBlur()
 		if (this.AutoScrollBlocked && this.Scroller.isScrolling) return
 
-		const lyricsContainerStyle = globalThis.getComputedStyle(this.LyricsContainer)
-		const lyricsContainerMarginTop = parseInt(lyricsContainerStyle.marginTop!)
-		const offset = (lyricsContainerStyle.getPropertyValue("--use-offset") === "1") ? parseInt(lyricsContainerStyle.lineHeight!) : 0
-		const scrollViewportHeight = this.ScrollContainer.offsetHeight
+		const lyricsContainerMarginTop = this.LyricsContainerMarginTop
+		const offset = this.LyricsOffset
+		const scrollViewportHeight = this.ScrollViewportHeight || this.ScrollContainer.offsetHeight
 		const viewportCenter = ((scrollViewportHeight / 2) - offset)
 		const minimumDistanceToAutoScroll = (viewportCenter - lyricsContainerMarginTop)
 		const currentScrollTop = this.ScrollerObject.scrollTop

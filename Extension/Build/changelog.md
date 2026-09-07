@@ -1,5 +1,21 @@
 # Changelog
 
+## [v1.2.0] - 2026-09-08
+
+Shoutout to @Satanarious for opening the very first issue on this repo (#1). Even though this project was on hold, I wanted to come back and fix it up properly.
+
+### Fixed & Improved
+
+- Switched to open-source BiniLyrics and LRCLIB so lyrics load again without the dead Spicy API (fixes #1)
+- Fixed the word animation "staircase" glitch: words scale up smoothly with the music now instead of jumping in steps
+- Fixed animation lag on fast words and reduced the bounce so it looks much cleaner
+- Smoothed out the audio clock: no more choppy 250ms stutter on 144Hz screens
+- Added proper background vocals support for synced lyrics
+- Fixed lag and random frame drops when scrolling through long songs
+- Fixed random crashes when track artist info was missing from Spotify
+
+---
+
 ## [v1.0.1.1.111.111.1] - 2026-06-16
 
 ### Fixed

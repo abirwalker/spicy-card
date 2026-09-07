@@ -24,6 +24,10 @@ export default class LineVocals implements SyncedVocals, Giveable {
 	private readonly GlowSpring: Spring
 	private State: LyricState = "Idle"
 	private IsSleeping: boolean = true
+	private LastProgress?: number
+	private LastBlurRadius?: number
+	private LastShadowOpacity?: number
+	private CurrentBlur: number = -1
 
 	private readonly ActivityChangedSignal = this.Maid.Give(new Signal<(isActive: boolean) => void>())
 	private readonly RequestedTimeSkipSignal = this.Maid.Give(new Signal<() => void>())
@@ -64,9 +68,25 @@ export default class LineVocals implements SyncedVocals, Giveable {
 
 	private UpdateLiveTextVisuals = (timeScale: number, deltaTime: number): boolean => {
 		const glowAlpha = this.GlowSpring.Update(deltaTime)
-		this.Span.style.setProperty("--text-shadow-blur-radius", `${4 + (8 * glowAlpha)}px`)
-		this.Span.style.setProperty("--text-shadow-opacity", `${glowAlpha * 50}%`)
-		this.Span.style.setProperty("--gradient-progress", `${0 + (120 * timeScale)}%`)
+
+		const progress = Math.round((120 * timeScale) * 2) / 2
+		if (this.LastProgress !== progress) {
+			this.LastProgress = progress
+			this.Span.style.setProperty("--gradient-progress", `${progress}%`)
+		}
+
+		const shadowOpacity = Math.round((glowAlpha * 50) / 2) * 2
+		if (this.LastShadowOpacity !== shadowOpacity) {
+			this.LastShadowOpacity = shadowOpacity
+			this.Span.style.setProperty("--text-shadow-opacity", `${shadowOpacity}%`)
+		}
+
+		const blurRadius = Math.round((4 + (8 * glowAlpha)) * 2) / 2
+		if (this.LastBlurRadius !== blurRadius) {
+			this.LastBlurRadius = blurRadius
+			this.Span.style.setProperty("--text-shadow-blur-radius", `${blurRadius}px`)
+		}
+
 		return this.GlowSpring.IsSleeping()
 	}
 
@@ -122,7 +142,13 @@ export default class LineVocals implements SyncedVocals, Giveable {
 
 	public ForceState(state: boolean) { this.SetToGeneralState(state) }
 	public IsActive() { return (this.State === "Active") }
-	public SetBlur(blurDistance: number) { this.Container.style.setProperty('--text-blur', `${blurDistance}px`) }
+	public SetBlur(blurDistance: number) {
+		const rounded = Math.round(blurDistance * 10) / 10
+		if (this.CurrentBlur !== rounded) {
+			this.CurrentBlur = rounded
+			this.Container.style.setProperty('--text-blur', `${rounded}px`)
+		}
+	}
 
 	public Destroy() { this.Maid.Destroy() }
 }

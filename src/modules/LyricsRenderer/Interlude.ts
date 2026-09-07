@@ -8,9 +8,19 @@ import { SyncedVocals, LyricState } from './Types.d'
 import { Interlude } from '../../types/Lyrics'
 
 type DotSprings = { Scale: Spring; YOffset: Spring; Glow: Spring; Opacity: Spring }
-type DotLiveText = { Object: HTMLSpanElement; Springs: DotSprings }
+type DotLiveText = {
+	Object: HTMLSpanElement; Springs: DotSprings
+	LastTransform?: string
+	LastBlurRadius?: number
+	LastShadowOpacity?: number
+	LastOpacity?: number
+}
 type MainSprings = { Scale: Spring; YOffset: Spring; Opacity: Spring }
-type MainLiveText = { Object: HTMLSpanElement; Springs: MainSprings }
+type MainLiveText = {
+	Object: HTMLSpanElement; Springs: MainSprings
+	LastTransform?: string
+	LastOpacity?: number
+}
 type AnimatedDot = { Start: number; Duration: number; GlowDuration: number; LiveText: DotLiveText }
 
 const DotCount = 3
@@ -129,11 +139,33 @@ export default class InterludeVisual implements SyncedVocals, Giveable {
 		const yOffset = liveText.Springs.YOffset.Update(deltaTime)
 		const glowAlpha = liveText.Springs.Glow.Update(deltaTime)
 		const opacity = liveText.Springs.Opacity.Update(deltaTime)
-		liveText.Object.style.transform = `translateY(calc(var(--dot-size) * ${yOffset}))`
-		liveText.Object.style.scale = scale.toString()
-		liveText.Object.style.setProperty("--text-shadow-blur-radius", `${4 + (6 * glowAlpha)}px`)
-		liveText.Object.style.setProperty("--text-shadow-opacity", `${glowAlpha * 90}%`)
-		liveText.Object.style.opacity = opacity.toString()
+
+		const roundedY = Math.round(yOffset * 10000) / 10000
+		const roundedScale = Math.round(scale * 1000) / 1000
+		const transformStr = `translate3d(0, calc(var(--dot-size) * ${roundedY}), 0) scale(${roundedScale})`
+		if (liveText.LastTransform !== transformStr) {
+			liveText.LastTransform = transformStr
+			liveText.Object.style.transform = transformStr
+		}
+
+		const blurRadius = Math.round((4 + (6 * glowAlpha)) * 2) / 2
+		if (liveText.LastBlurRadius !== blurRadius) {
+			liveText.LastBlurRadius = blurRadius
+			liveText.Object.style.setProperty("--text-shadow-blur-radius", `${blurRadius}px`)
+		}
+
+		const shadowOpacity = Math.round((glowAlpha * 90) / 2) * 2
+		if (liveText.LastShadowOpacity !== shadowOpacity) {
+			liveText.LastShadowOpacity = shadowOpacity
+			liveText.Object.style.setProperty("--text-shadow-opacity", `${shadowOpacity}%`)
+		}
+
+		const roundedOpacity = Math.round(opacity * 100) / 100
+		if (liveText.LastOpacity !== roundedOpacity) {
+			liveText.LastOpacity = roundedOpacity
+			liveText.Object.style.opacity = roundedOpacity.toString()
+		}
+
 		return (liveText.Springs.Scale.IsSleeping() && liveText.Springs.YOffset.IsSleeping() && liveText.Springs.Glow.IsSleeping() && liveText.Springs.Opacity.IsSleeping())
 	}
 
@@ -151,9 +183,21 @@ export default class InterludeVisual implements SyncedVocals, Giveable {
 		const scale = liveText.Springs.Scale.Update(deltaTime)
 		const yOffset = liveText.Springs.YOffset.Update(deltaTime)
 		const opacity = liveText.Springs.Opacity.Update(deltaTime)
-		liveText.Object.style.transform = `translateY(calc(var(--dot-size) * ${yOffset}))`
-		liveText.Object.style.scale = scale.toString()
-		liveText.Object.style.opacity = easeSinOut(opacity).toString()
+
+		const roundedY = Math.round(yOffset * 10000) / 10000
+		const roundedScale = Math.round(scale * 1000) / 1000
+		const transformStr = `translate3d(0, calc(var(--dot-size) * ${roundedY}), 0) scale(${roundedScale})`
+		if (liveText.LastTransform !== transformStr) {
+			liveText.LastTransform = transformStr
+			liveText.Object.style.transform = transformStr
+		}
+
+		const roundedOpacity = Math.round(easeSinOut(opacity) * 100) / 100
+		if (liveText.LastOpacity !== roundedOpacity) {
+			liveText.LastOpacity = roundedOpacity
+			liveText.Object.style.opacity = roundedOpacity.toString()
+		}
+
 		return (liveText.Springs.Scale.IsSleeping() && liveText.Springs.YOffset.IsSleeping() && liveText.Springs.Opacity.IsSleeping())
 	}
 

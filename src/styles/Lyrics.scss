@@ -8,6 +8,7 @@
 	overflow-x: visible;
 	z-index: 2;
 	padding-bottom: 16px;
+	contain: layout paint;
 	
 	/* Dynamic scrollbar sizing - adjust clamp() values below to fine-tune */
 	/* Format: clamp(MIN, PREFERRED, MAX) */
@@ -79,6 +80,7 @@
 	width: 100cqw;
 	height: 0;
 	container-type: size;
+	contain: layout;
 
 	--vocal-idle-opacity: 0.51;
 	--vocal-active-opacity: 1;
@@ -113,6 +115,7 @@
 	margin-top: 1cqw;
 	margin-bottom: 1cqw;
 	will-change: transform;
+	contain: layout;
 }
 
 .VocalsGroup:is(button) { cursor: pointer; }
@@ -239,14 +242,18 @@
 	margin-right: -0.5em;
 }
 .Vocals.Lead .Line { transition: background-color 0.3s cubic-bezier(0.61, 1, 0.88, 1); transition: scale 0.1s cubic-bezier(0.37, 0, 0.63, 1); }
-.Vocals.Lead.Active .Line { --gradient-offset: 0%; scale: 1.04; }
+.Vocals.Lead.Active .Line { --gradient-offset: 0%; scale: 1.025; }
 .NaturallyAlignedLeft .Line { transform-origin: left center; }
 .NaturallyAlignedLeft .VocalsGroup.AlignedOpposite .Line { transform-origin: right center; }
 .NaturallyAlignedRight .Line { transform-origin: right center; }
 .NaturallyAlignedRight .VocalsGroup.AlignedOpposite .Line { transform-origin: left center; }
 
 /* Syllable-Synced Lyric */
-.Syllable, .Word { display: inline-block; }
+.Syllable, .Word {
+	display: inline-block;
+	will-change: transform;
+	backface-visibility: hidden;
+}
 .Syllable:not(.Emphasis) { white-space: pre; }
 .Syllable.PartOfWord.StartOfWord { transform-origin: right center; }
 .Syllable.EndOfWord { transform-origin: left center; }

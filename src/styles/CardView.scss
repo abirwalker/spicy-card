@@ -74,6 +74,7 @@
 	padding: 16px;
 	position: relative;
 	overflow: hidden;
+	contain: layout;
 
 	-ms-flex-direction: column;
 	flex-direction: column;

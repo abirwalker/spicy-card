@@ -13,16 +13,20 @@ type AnimatedSyllable = {
 	Start: number; Duration: number; StartScale: number; DurationScale: number; LiveText: LiveText
 } & ({ Type: "Syllable" } | { Type: "Letters"; Letters: AnimatedLetter[] })
 
-const ScaleRange = [{ Time: 0, Value: 0.95 }, { Time: 0.7, Value: 1.025 }, { Time: 1, Value: 1 }]
+const ScaleRange = [{ Time: 0, Value: 0.97 }, { Time: 0.7, Value: 1.025 }, { Time: 1, Value: 1 }]
+const LetterScaleRange = [{ Time: 0, Value: 0.97 }, { Time: 0.7, Value: 1.08 }, { Time: 1, Value: 1 }]
 const YOffsetRange = [{ Time: 0, Value: (1 / 100) }, { Time: 0.9, Value: -(1 / 60) }, { Time: 1, Value: 0 }]
+const LetterYOffsetRange = [{ Time: 0, Value: (1 / 100) }, { Time: 0.9, Value: -(1 / 56) }, { Time: 1, Value: 0 }]
 const GlowRange = [{ Time: 0, Value: 0 }, { Time: 0.15, Value: 1 }, { Time: 0.6, Value: 1 }, { Time: 1, Value: 0 }]
 const ScaleSpline = GetSpline(ScaleRange)
+const LetterScaleSpline = GetSpline(LetterScaleRange)
 const YOffsetSpline = GetSpline(YOffsetRange)
+const LetterYOffsetSpline = GetSpline(LetterYOffsetRange)
 const GlowSpline = GetSpline(GlowRange)
 
-const YOffsetDamping = 0.4, YOffsetFrequency = 1.25
-const ScaleDamping = 0.6, ScaleFrequency = 0.7
-const GlowDamping = 0.5, GlowFrequency = 1
+const YOffsetDamping = 0.4, YOffsetFrequency = 1.45
+const ScaleDamping = 0.68, ScaleFrequency = 1.2
+const GlowDamping = 0.56, GlowFrequency = 1.18
 
 const CreateSprings = () => ({
 	Scale: new Spring(0, ScaleDamping, ScaleFrequency),
@@ -45,6 +49,7 @@ export default class SyllableVocals implements SyncedVocals, Giveable {
 	private readonly Syllables: AnimatedSyllable[] = []
 	private State: LyricState = "Idle"
 	private IsSleeping: boolean = true
+	private CurrentBlur: number = -1
 
 	private readonly ActivityChangedSignal = this.Maid.Give(new Signal<(isActive: boolean) => void>())
 	private readonly RequestedTimeSkipSignal = this.Maid.Give(new Signal<() => void>())
@@ -59,7 +64,7 @@ export default class SyllableVocals implements SyncedVocals, Giveable {
 		container.addEventListener('click', () => this.RequestedTimeSkipSignal.Fire())
 
 		this.StartTime = syllablesMetadata[0].StartTime
-		this.Duration = (syllablesMetadata[syllablesMetadata.length - 1].EndTime - this.StartTime)
+		this.Duration = Math.max(0.05, syllablesMetadata[syllablesMetadata.length - 1].EndTime - this.StartTime)
 
 		const syllableGroups: SyllableList[] = []
 		{
@@ -114,12 +119,12 @@ export default class SyllableVocals implements SyncedVocals, Giveable {
 					span.innerText = (isRomanized && meta.RomanizedText || meta.Text)
 				}
 
-				const relativeStart = (meta.StartTime - this.StartTime)
-				const relativeEnd = (meta.EndTime - this.StartTime)
+				const relativeStart = Math.max(0, meta.StartTime - this.StartTime)
+				const relativeEnd = Math.max(relativeStart + 0.05, meta.EndTime - this.StartTime)
 				const relativeStartScale = (relativeStart / this.Duration)
 				const relativeEndScale = (relativeEnd / this.Duration)
 				const duration = (relativeEnd - relativeStart)
-				const durationScale = (relativeEndScale - relativeStartScale)
+				const durationScale = Math.max(0.0001, relativeEndScale - relativeStartScale)
 				const syllableLiveText = { Object: span, Springs: CreateSprings() }
 
 				if (isEmphasized) {
@@ -135,9 +140,9 @@ export default class SyllableVocals implements SyncedVocals, Giveable {
 		lineContainer.appendChild(container)
 	}
 
-	private UpdateLiveTextState = (liveText: LiveText, timeScale: number, glowTimeScale: number, forceTo?: true) => {
-		const scale = ScaleSpline.at(timeScale)
-		const yOffset = YOffsetSpline.at(timeScale)
+	private UpdateLiveTextState = (liveText: LiveText, isEmphasized: boolean, timeScale: number, glowTimeScale: number, forceTo?: true) => {
+		const scale = (isEmphasized ? LetterScaleSpline : ScaleSpline).at(timeScale)
+		const yOffset = (isEmphasized ? LetterYOffsetSpline : YOffsetSpline).at(timeScale)
 		const glowAlpha = GlowSpline.at(glowTimeScale)
 		if (forceTo) { liveText.Springs.Scale.Set(scale); liveText.Springs.YOffset.Set(yOffset); liveText.Springs.Glow.Set(glowAlpha) }
 		else { liveText.Springs.Scale.Final = scale; liveText.Springs.YOffset.Final = yOffset; liveText.Springs.Glow.Final = glowAlpha }
@@ -147,11 +152,33 @@ export default class SyllableVocals implements SyncedVocals, Giveable {
 		const scale = liveText.Springs.Scale.Update(deltaTime)
 		const yOffset = liveText.Springs.YOffset.Update(deltaTime)
 		const glowAlpha = liveText.Springs.Glow.Update(deltaTime)
-		liveText.Object.style.setProperty("--gradient-progress", `${-20 + (120 * timeScale)}%`)
-		liveText.Object.style.transform = `translateY(calc(var(--lyrics-size) * ${yOffset * (isEmphasized ? 2 : 1)}))`
-		liveText.Object.style.scale = scale.toString()
-		liveText.Object.style.setProperty("--text-shadow-blur-radius", `${4 + (2 * glowAlpha * (isEmphasized ? 3 : 1))}px`)
-		liveText.Object.style.setProperty("--text-shadow-opacity", `${glowAlpha * (isEmphasized ? 100 : 35)}%`)
+
+		const progress = Math.round((-20 + (120 * timeScale)) * 2) / 2
+		if (liveText.LastProgress !== progress) {
+			liveText.LastProgress = progress
+			liveText.Object.style.setProperty("--gradient-progress", `${progress}%`)
+		}
+
+		const roundedY = Math.round(yOffset * (isEmphasized ? 2 : 1) * 10000) / 10000
+		const roundedScale = Math.round(scale * 1000) / 1000
+		const transformStr = `translate3d(0, ${roundedY}em, 0) scale(${roundedScale})`
+		if (liveText.LastTransform !== transformStr) {
+			liveText.LastTransform = transformStr
+			liveText.Object.style.transform = transformStr
+		}
+
+		const shadowOpacity = Math.round((glowAlpha * (isEmphasized ? 100 : 35)) / 2) * 2
+		if (liveText.LastShadowOpacity !== shadowOpacity) {
+			liveText.LastShadowOpacity = shadowOpacity
+			liveText.Object.style.setProperty("--text-shadow-opacity", `${shadowOpacity}%`)
+		}
+
+		const blurRadius = Math.round((4 + (2 * glowAlpha * (isEmphasized ? 3 : 1))) * 2) / 2
+		if (liveText.LastBlurRadius !== blurRadius) {
+			liveText.LastBlurRadius = blurRadius
+			liveText.Object.style.setProperty("--text-shadow-blur-radius", `${blurRadius}px`)
+		}
+
 		return (liveText.Springs.Scale.IsSleeping() && liveText.Springs.YOffset.IsSleeping() && liveText.Springs.Glow.IsSleeping())
 	}
 
@@ -169,11 +196,11 @@ export default class SyllableVocals implements SyncedVocals, Giveable {
 	private SetToGeneralState(state: boolean) {
 		const timeScale = (state ? 1 : 0)
 		for (const syllable of this.Syllables) {
-			this.UpdateLiveTextState(syllable.LiveText, timeScale, timeScale, true)
+			this.UpdateLiveTextState(syllable.LiveText, false, timeScale, timeScale, true)
 			this.UpdateLiveTextVisuals(syllable.LiveText, false, timeScale, 0)
 			if (syllable.Type === "Letters") {
 				for (const letter of syllable.Letters) {
-					this.UpdateLiveTextState(letter.LiveText, timeScale, timeScale, true)
+					this.UpdateLiveTextState(letter.LiveText, true, timeScale, timeScale, true)
 					this.UpdateLiveTextVisuals(letter.LiveText, true, timeScale, 0)
 				}
 			}
@@ -204,18 +231,20 @@ export default class SyllableVocals implements SyncedVocals, Giveable {
 		if (shouldUpdateVisualState || isMoving) {
 			let isSleeping = true
 			for (const syllable of this.Syllables) {
-				const syllableTimeScale = Clamp(((timeScale - syllable.StartScale) / syllable.DurationScale), 0, 1)
+				const syllableTimeScale = (syllable.DurationScale > 0)
+					? Clamp(((timeScale - syllable.StartScale) / syllable.DurationScale), 0, 1)
+					: (timeScale >= syllable.StartScale ? 1 : 0)
 				if (syllable.Type == "Letters") {
 					const timeAlpha = easeSinOut(syllableTimeScale)
 					for (const letter of syllable.Letters) {
 						const letterTime = (timeAlpha - letter.Start)
-						const letterTimeScale = Clamp((letterTime / letter.Duration), 0, 1)
-						const glowTimeScale = Clamp((letterTime / letter.GlowDuration), 0, 1)
-						if (shouldUpdateVisualState) this.UpdateLiveTextState(letter.LiveText, letterTimeScale, glowTimeScale, isImmediate)
+						const letterTimeScale = (letter.Duration > 0) ? Clamp((letterTime / letter.Duration), 0, 1) : 0
+						const glowTimeScale = (letter.GlowDuration > 0) ? Clamp((letterTime / letter.GlowDuration), 0, 1) : 0
+						if (shouldUpdateVisualState) this.UpdateLiveTextState(letter.LiveText, true, letterTimeScale, glowTimeScale, isImmediate)
 						if (isMoving) { if (!this.UpdateLiveTextVisuals(letter.LiveText, true, letterTimeScale, deltaTime)) isSleeping = false }
 					}
 				}
-				if (shouldUpdateVisualState) this.UpdateLiveTextState(syllable.LiveText, syllableTimeScale, syllableTimeScale, isImmediate)
+				if (shouldUpdateVisualState) this.UpdateLiveTextState(syllable.LiveText, false, syllableTimeScale, syllableTimeScale, isImmediate)
 				if (isMoving) { if (!this.UpdateLiveTextVisuals(syllable.LiveText, false, syllableTimeScale, deltaTime)) isSleeping = false }
 			}
 			if (isSleeping) {
@@ -227,6 +256,12 @@ export default class SyllableVocals implements SyncedVocals, Giveable {
 
 	public ForceState(state: boolean) { this.SetToGeneralState(state) }
 	public IsActive() { return (this.State === "Active") }
-	public SetBlur(blurDistance: number) { this.Container.style.setProperty('--text-blur', `${blurDistance}px`) }
+	public SetBlur(blurDistance: number) {
+		const rounded = Math.round(blurDistance * 10) / 10
+		if (this.CurrentBlur !== rounded) {
+			this.CurrentBlur = rounded
+			this.Container.style.setProperty('--text-blur', `${rounded}px`)
+		}
+	}
 	public Destroy() { this.Maid.Destroy() }
 }

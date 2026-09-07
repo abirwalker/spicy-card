@@ -31,8 +31,15 @@ export async function fetchAndAdaptLyrics(trackId: string): Promise<LyricsResult
 
 	try {
 		const item = Spicetify.Player.data?.item
-		const songTitle = item?.name ?? ""
-		const artistName = item?.artists?.map((a: any) => a.name).join(", ") || (item?.artists?.[0]?.name ?? "")
+		const meta = (item as any)?.metadata
+		const songTitle = meta?.title || item?.name || ""
+
+		let artistName = meta?.artist_name || ""
+		if (!artistName && Array.isArray(item?.artists)) {
+			artistName = item.artists.map((a: any) => a?.name).filter(Boolean).join(", ")
+		} else if (!artistName && item?.artists?.[0]?.name) {
+			artistName = item.artists[0].name
+		}
 
 		if (!songTitle && !artistName) {
 			return null
@@ -41,9 +48,9 @@ export async function fetchAndAdaptLyrics(trackId: string): Promise<LyricsResult
 		const query: TrackQuery = {
 			title: songTitle,
 			artist: artistName,
-			album: item?.album?.name,
-			durationMs: item?.duration,
-			isrc: (item?.metadata as any)?.isrc
+			album: meta?.album_title || item?.album?.name,
+			durationMs: Number(meta?.duration || item?.duration || 0),
+			isrc: meta?.isrc
 		}
 
 		const lyrics = await fetchBiniLyrics(query)
