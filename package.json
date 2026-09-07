@@ -2,7 +2,7 @@
   "name": "spicy-card",
   "author": "abirwalker",
   "version": "1.0.1.1.111.111.1",
-  "description": "Beautiful Lyrics card view using hotwiring Spicy Lyrics API",
+  "description": "Beautiful Lyrics card view powered by open-source BiniLyrics",
   "scripts": {
     "dev": "spicetify-creator dev",
     "build": "spicetify-creator build"

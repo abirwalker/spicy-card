@@ -1,20 +1,7 @@
 import { TransformedLyrics } from '../types/Lyrics'
-import { Query } from './Query'
-import { adaptLyrics } from './adaptLyrics'
+import { fetchBiniLyrics, TrackQuery } from './BiniLyrics'
 import { processRomanization, detectCJKLanguage } from './processLyrics'
 import { getLyricsFromCache, setLyricsCache, setLyricsCacheNegative } from './LyricsCache'
-
-async function getAccessToken(): Promise<string> {
-	try {
-		const result = await Spicetify.CosmosAsync.get("sp://oauth/v2/token")
-		return result.accessToken
-	} catch {
-		// Fallback for older Spotify versions
-		const token = (Spicetify.Platform?.Session as any)?.accessToken
-		if (token) return token
-		throw new Error("[SpicyCardView] Could not obtain Spotify access token")
-	}
-}
 
 export type LyricsResult = {
 	lyrics: TransformedLyrics
@@ -30,54 +17,59 @@ export async function fetchAndAdaptLyrics(trackId: string): Promise<LyricsResult
 		return null
 	}
 	if (cached !== undefined) {
-		const lyrics = adaptLyrics(cached)
-		if (!lyrics) return null
+		const cjkLanguage = detectCJKLanguage(cached)
+		if (cjkLanguage && !cached.RomanizedLanguage) {
+			cached.RomanizedLanguage = cjkLanguage
+		}
 
-		const romanizationReady = detectCJKLanguage(cached)
+		const romanizationReady = cjkLanguage
 			? processRomanization(cached).catch(() => {})
 			: Promise.resolve()
 
-		return { lyrics, romanizationReady }
+		return { lyrics: cached, romanizationReady }
 	}
 
 	try {
-		const accessToken = await getAccessToken()
+		const item = Spicetify.Player.data?.item
+		const songTitle = item?.name ?? ""
+		const artistName = item?.artists?.map((a: any) => a.name).join(", ") || (item?.artists?.[0]?.name ?? "")
 
-		const queries = await Query(
-			[{ operation: "lyrics", variables: { id: trackId, auth: "SpicyLyrics-WebAuth" } }],
-			{ "SpicyLyrics-WebAuth": `Bearer ${accessToken}` }
-		)
-
-		const result = queries.get("0")
-		if (!result) {
-			console.warn("[SpicyCardView] No lyrics query result returned")
+		if (!songTitle && !artistName) {
 			return null
 		}
 
-		if (result.httpStatus === 404) {
+		const query: TrackQuery = {
+			title: songTitle,
+			artist: artistName,
+			album: item?.album?.name,
+			durationMs: item?.duration,
+			isrc: (item?.metadata as any)?.isrc
+		}
+
+		const lyrics = await fetchBiniLyrics(query)
+
+		if (!lyrics) {
 			setLyricsCacheNegative(trackId)
 			return null
 		}
 
-		if (result.httpStatus !== 200) {
-			console.warn(`[SpicyCardView] Lyrics fetch returned status ${result.httpStatus}`)
-			return null
+		// Cache the adapted lyrics
+		setLyricsCache(trackId, lyrics)
+
+		// Detect CJK language for romanization toggle
+		const cjkLanguage = detectCJKLanguage(lyrics)
+		if (cjkLanguage) {
+			lyrics.RomanizedLanguage = cjkLanguage
 		}
 
-		// Cache the raw API response
-		setLyricsCache(trackId, result.data)
-
 		// Start romanization in background: don't await.
-		// RomanizedText fields are populated in-place on the raw data object.
+		// RomanizedText fields are populated in-place on lyrics objects.
 		// romanizationReady resolves when done so CardView can wait on it if needed.
-		const romanizationReady = detectCJKLanguage(result.data)
-			? processRomanization(result.data).catch(err =>
+		const romanizationReady = cjkLanguage
+			? processRomanization(lyrics).catch((err) =>
 				console.warn("[SpicyCardView] Background romanization failed:", err)
 			  )
 			: Promise.resolve()
-
-		const lyrics = adaptLyrics(result.data)
-		if (!lyrics) return null
 
 		return { lyrics, romanizationReady }
 	} catch (error) {

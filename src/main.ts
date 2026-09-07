@@ -84,7 +84,6 @@ const waitForSpicetify = (): Promise<void> => {
       if (
         Spicetify?.Player &&
         Spicetify?.LocalStorage &&
-        Spicetify?.CosmosAsync &&
         Spicetify.Player.data?.item
       ) {
         resolve();

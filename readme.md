@@ -1,6 +1,6 @@
 # Spicy Card
 
-A Spicetify extension that brings a synced lyrics card view right into Spotify's sidebar. It hooks into the [Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics) API by Spikerko and inspired from [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics) by SoCalifornian.
+A Spicetify extension that brings a synced lyrics card view right into Spotify's sidebar. Powered by the open-source [BiniLyrics](https://lyrics-api.binimum.org) API and [LRCLIB](https://lrclib.net), inspired by [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics) by SoCalifornian.
 
 ## Preview
 
@@ -50,23 +50,19 @@ The built extension will be available at `dist/spicy-card.js`. Copy this file to
 
 ## Credits
 
-### Beautiful Lyrics — SoCalifornian
+### Beautiful Lyrics: SoCalifornian
 
 The card view UI, Maid lifecycle pattern, sidebar injection logic, and lyrics renderer
 architecture are inspired from [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics)
 by [SoCalifornian](https://github.com/surfbryce).
 
-### Spicy Lyrics — Spikerko
+### BiniLyrics & LRCLIB
 
-The lyrics API client (`Query.ts`) and API protocol are adapted from
-[Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics) by [Spikerko](https://github.com/Spikerko),
-licensed under the [GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html).
-
-In accordance with the AGPL-3.0, the source code for this extension is made available publicly.
+Lyrics are fetched from the open-source [BiniLyrics](https://lyrics-api.binimum.org) API
+with fallback to [LRCLIB](https://lrclib.net).
 
 ## License
 
-Source code is made available under the terms of the
-[GNU Affero General Public License v3.0](https://www.gnu.org/licenses/agpl-3.0.html)
-as required by the Spicy Lyrics dependency.
+Source code is made available under the terms of the MIT License.
+
 
