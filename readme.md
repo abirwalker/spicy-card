@@ -1,6 +1,9 @@
 # Spicy Card
 
-A Spicetify extension that brings a synced lyrics card view right into Spotify's sidebar. Powered by the open-source [BiniLyrics](https://lyrics-api.binimum.org) API and [LRCLIB](https://lrclib.net), inspired by [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics) by SoCalifornian.
+A Spicetify extension that brings a synced lyrics card view right into Spotify's sidebar. Originally built around ~~[Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics)~~, now powered by the open-source [BiniLyrics](https://lyrics-api.binimum.org) API and [LRCLIB](https://lrclib.net), with syllable-synced animations inspired by [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics) by SoCalifornian.
+
+> [!NOTE]
+> **Project Status**: Spicy Card is in maintenance mode. Active development has shifted to **Vivid Lyrics**.
 
 ## Preview
 
@@ -52,9 +55,12 @@ The built extension will be available at `dist/spicy-card.js`. Copy this file to
 
 ### Beautiful Lyrics: SoCalifornian
 
-The card view UI, Maid lifecycle pattern, sidebar injection logic, and lyrics renderer
-architecture are inspired from [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics)
+The syllable-synced karaoke animation concept and visual styling were originally inspired by [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics)
 by [SoCalifornian](https://github.com/surfbryce).
+
+### ~~Spicy Lyrics: Spikerko~~
+
+~~The original project hooked into the [Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics) API by [Spikerko](https://github.com/Spikerko).~~ (Deprecated in favor of open-source providers).
 
 ### BiniLyrics & LRCLIB
 
