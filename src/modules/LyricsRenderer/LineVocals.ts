@@ -75,13 +75,13 @@ export default class LineVocals implements SyncedVocals, Giveable {
 			this.Span.style.setProperty("--gradient-progress", `${progress}%`)
 		}
 
-		const shadowOpacity = Math.round((glowAlpha * 50) / 2) * 2
+		const shadowOpacity = Math.round((glowAlpha * 35) / 2) * 2
 		if (this.LastShadowOpacity !== shadowOpacity) {
 			this.LastShadowOpacity = shadowOpacity
 			this.Span.style.setProperty("--text-shadow-opacity", `${shadowOpacity}%`)
 		}
 
-		const blurRadius = Math.round((4 + (8 * glowAlpha)) * 2) / 2
+		const blurRadius = Math.round((4 + (2 * glowAlpha)) * 2) / 2
 		if (this.LastBlurRadius !== blurRadius) {
 			this.LastBlurRadius = blurRadius
 			this.Span.style.setProperty("--text-shadow-blur-radius", `${blurRadius}px`)

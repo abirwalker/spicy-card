@@ -283,8 +283,10 @@ export function parseTTML(ttmlXml: string): TransformedLyrics | null {
 
 		const beginMatch = pAttrs.match(/begin="([^"]+)"/i)
 		const endMatch = pAttrs.match(/end="([^"]+)"/i)
-		const lineBegin = beginMatch ? parseTime(beginMatch[1]) : 0
-		const lineEnd = endMatch ? parseTime(endMatch[1]) : lineBegin + 3
+		const prevLineEnd = rawLines.length > 0 ? rawLines[rawLines.length - 1].endTime : 0
+		const lineBegin = beginMatch ? parseTime(beginMatch[1]) : prevLineEnd
+		let lineEnd = endMatch ? parseTime(endMatch[1]) : lineBegin + 3
+		if (lineEnd <= lineBegin) lineEnd = lineBegin + 3
 
 		const oppositeAligned = /ttm:agent="v2"/i.test(pAttrs)
 
@@ -314,8 +316,10 @@ export function parseTTML(ttmlXml: string): TransformedLyrics | null {
 
 	if (rawLines.length === 0) return null
 
-	const totalStartTime = rawLines[0].startTime
-	const totalEndTime = rawLines[rawLines.length - 1].endTime
+	rawLines.sort((a, b) => a.startTime - b.startTime)
+
+	const totalStartTime = Math.min(...rawLines.map((l) => l.startTime))
+	const totalEndTime = Math.max(...rawLines.map((l) => l.endTime))
 
 	const baseHeader = {
 		NaturalAlignment: naturalAlignment as "Left" | "Right",
@@ -451,7 +455,7 @@ function parseLRC(lrcText: string): TransformedLyrics | null {
 	for (let i = 0; i < stamped.length; i++) {
 		const current = stamped[i]
 		const nextStart = i + 1 < stamped.length ? stamped[i + 1].startTime : current.startTime + 4.0
-		const endTime = Math.max(nextStart, current.startTime + 1.0)
+		const endTime = Math.max(nextStart, current.startTime + 0.5)
 
 		if (i === 0 && current.startTime >= 3.0) {
 			content.push({

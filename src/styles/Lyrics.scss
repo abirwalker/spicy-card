@@ -7,7 +7,7 @@
 	overflow-y: auto;
 	overflow-x: visible;
 	z-index: 2;
-	padding-bottom: 16px;
+	padding-bottom: 2px;
 	contain: layout paint;
 	
 	/* Dynamic scrollbar sizing - adjust clamp() values below to fine-tune */
@@ -15,18 +15,22 @@
 	--scrollbar-width: clamp(10px, 2cqw, 14px);
 }
 
+#SpicyCard-CardView .LyricsScrollContainer {
+	// Extend into the card gutter; .Lyrics keeps the original 100cqw text width.
+	width: calc(100cqw + 16px);
+}
+
 /* SimpleBar scrollbar - show on hover only, scoped to fix spicy-lyrics overrides as with both installed */
 /* Which causes Spicy Cards Scrollbar to disappear */
 #SpicyCard-CardView .simplebar-track.simplebar-vertical {
+	top: 8px;
+	bottom: 8px;
+	right: 2px;
 	width: var(--scrollbar-width) !important;
 	background: transparent;
 	border-radius: calc(var(--scrollbar-width) / 2);
 	transition: background 0.2s 0.5s ease;
 	z-index: 2;
-}
-
-#SpicyCard-CardView .simplebar-scrollbar {
-	min-height: 60px;
 }
 
 #SpicyCard-CardView .simplebar-scrollbar:before {

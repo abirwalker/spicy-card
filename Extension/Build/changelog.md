@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.2.1] - 2026-09-21
+
+- Moved the scrollbar into the right gutter and corrected thumb sizing so it reaches the bottom with the content.
+- Kept the scrollbar visible through the lyrics fade and improved clearance for the last line and credits.
+- Fixed stale lyrics after podcast switches, leftover loading cards, and repeated Sync button handlers.
+- Fixed startup scroll handling and chronological ordering of TTML lines with missing timestamps.
+- Balanced card spacing and reduced the glow on line-synced lyrics.
+- Added the root MIT license file and package license metadata.
+
 ## [v1.2.0] - 2026-09-08
 
 Shoutout to @Satanarious for opening the very first issue on this repo (#1). Even though this project was on hold, I wanted to come back and fix it up properly.

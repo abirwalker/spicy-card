@@ -12,7 +12,7 @@ export type VocalGroups<V extends (BaseVocals | SyncedVocals)> = VocalGroup<V>[]
 const DistanceToMaximumBlur = 4
 const BlurScale = 1.25
 const UserScrollingStopsAfter = 3
-const AutoScrollingStopsAfter = (1 / 30)
+const AutoScrollingStopsAfter = 0.4
 
 const GetTotalElementHeight = (element: HTMLElement): number => {
 	const style = globalThis.getComputedStyle(element)
@@ -43,7 +43,7 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 	) {
 		this.LyricsAreSynced = lyricsAreSynced
 		this.Maid = new Maid()
-		this.Scroller = new SimpleBar(scrollContainer)
+		this.Scroller = new SimpleBar(scrollContainer, { scrollbarMinSize: 60 })
 		this.ScrollerObject = this.Scroller.getScrollElement()!
 		this.Maid.Give(this.Scroller.unMount.bind(this.Scroller))
 		this.ScrollContainer = scrollContainer
@@ -58,6 +58,7 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 		}))
 		resizeObserver.observe(this.ScrollContainer)
 		this.UpdateLyricHeights()
+		this.ForceToTop()
 
 		if (lyricsAreSynced) {
 			this.HandleLyricActiveStateChanges()
@@ -74,6 +75,18 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 	}
 
 	private WatchAutoScrollBlocking() {
+		const onUserScroll = () => {
+			this.Maid.Clean("WaitForAutoScroll")
+			this.AutoScrolling = false
+			this.ToggleAutoScrollBlock(true)
+			this.Maid.Give(Timeout(UserScrollingStopsAfter, () => this.MoveToActiveLyrics()), "WaitForUserToStopScrolling")
+		}
+
+		this.ScrollContainer.addEventListener("wheel", onUserScroll, { passive: true })
+		this.ScrollContainer.addEventListener("touchmove", onUserScroll, { passive: true })
+		this.Maid.Give(() => this.ScrollContainer.removeEventListener("wheel", onUserScroll))
+		this.Maid.Give(() => this.ScrollContainer.removeEventListener("touchmove", onUserScroll))
+
 		const callback = () => {
 			if (this.AutoScrolling === false) {
 				this.ToggleAutoScrollBlock(true)
@@ -107,6 +120,15 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 			this.GroupDimensions.push({ Height: (groupHeight / 2), Center: (totalHeight + (groupHeight / 2)) })
 			totalHeight += groupHeight
 		}
+
+		const credits = this.LyricsContainer.querySelector<HTMLDivElement>('.Credits')
+		if (credits) {
+			totalHeight += GetTotalElementHeight(credits)
+		}
+
+		// Provide bottom clearance so the last line and credits can scroll above the bottom mask
+		totalHeight += 24
+
 		this.LyricsContainer.style.height = `${totalHeight}px`
 		this.Scroller.recalculate()
 	}
@@ -162,6 +184,8 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 		if (activeVocalGroups.length === 0) {
 			if ((this.AutoScrollBlocked === false) && this.LyricsEnded) {
 				if (currentScrollTop < maximumScrollTop) this.ScrollTo(maximumScrollTop)
+			} else if (this.AutoScrollBlocked === false && this.LastActiveVocalIndex === 0 && currentScrollTop > 0) {
+				this.ScrollTo(0)
 			}
 			return
 		}
@@ -189,8 +213,11 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 	}
 
 	private ScrollTo(yPosition: number) {
+		const target = Math.max(0, Math.min(yPosition, this.ScrollerObject.scrollHeight - this.ScrollerObject.clientHeight))
+		if (this.ScrollerObject.scrollTop === target) return
 		this.AutoScrolling = true
-		this.ScrollerObject.scrollTop = yPosition
+		this.Maid.Give(Timeout(AutoScrollingStopsAfter, () => this.AutoScrolling = false), "WaitForAutoScroll")
+		this.ScrollerObject.scrollTop = target
 		this.Scroller.scrollY()
 	}
 

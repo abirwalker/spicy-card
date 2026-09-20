@@ -122,12 +122,18 @@ async function init() {
     // Song change handling
     let currentFetchId = 0;
     let lastFetchedTrackId: string | null = null;
+    let activeLoadingCard: HTMLDivElement | null = null;
 
     const onSongChange = async () => {
       const trackId = getCurrentTrackId();
       if (trackId && trackId === lastFetchedTrackId) return;
 
-      // Clean previous card
+      const fetchId = ++currentFetchId;
+      lastFetchedTrackId = null;
+
+      // Clean previous card and any in-flight loading skeleton
+      activeLoadingCard?.remove();
+      activeLoadingCard = null;
       existingCard?.Destroy();
       existingCard = null;
 
@@ -154,9 +160,7 @@ async function init() {
           }, 3000);
         });
       }
-      if (!fetchTrackId) return;
-
-      const fetchId = ++currentFetchId;
+      if (!fetchTrackId || fetchId !== currentFetchId) return;
 
       const cached = getLyricsFromCache(fetchTrackId);
       const isCacheHit = cached !== undefined;
@@ -164,15 +168,19 @@ async function init() {
       let loadingCard: HTMLDivElement | undefined;
       if (!isCacheHit) {
         loadingCard = CreateElement<HTMLDivElement>(LoadingLyricsCard);
+        activeLoadingCard = loadingCard;
         cardAnchor.after(loadingCard);
       }
 
       const result = await fetchAndAdaptLyrics(fetchTrackId);
 
-      if (fetchId !== currentFetchId) return;
-
-      // Clean loading card
+      // Clean loading card regardless of whether fetch was superseded
       loadingCard?.remove();
+      if (activeLoadingCard === loadingCard) {
+        activeLoadingCard = null;
+      }
+
+      if (fetchId !== currentFetchId) return;
 
       if (result) {
         lastFetchedTrackId = fetchTrackId;
@@ -205,6 +213,8 @@ async function init() {
       Spicetify.Player.removeEventListener("songchange", songChangeHandler);
       nativeObserver.disconnect();
       currentFetchId++; // cancel in-flight fetch
+      activeLoadingCard?.remove();
+      activeLoadingCard = null;
       existingCard?.Destroy();
       existingCard = null;
     });

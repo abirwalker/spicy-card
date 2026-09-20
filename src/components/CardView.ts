@@ -219,7 +219,10 @@ export default class CardView implements Giveable {
 		if (renderer.Scroller) {
 			const scroller = renderer.Scroller
 
-			syncButton.addEventListener("click", () => scroller.ForceToActive())
+			const onSyncClick = () => scroller.ForceToActive()
+			syncButton.addEventListener("click", onSyncClick)
+			this.Maid.Give(() => syncButton.removeEventListener("click", onSyncClick), "SyncButtonClickListener")
+
 			scroller.OnAutoScrollStateChanged = (blocked) => {
 				syncButton.style.display = blocked ? "" : "none"
 			}
@@ -239,6 +242,8 @@ export default class CardView implements Giveable {
 				resizeObserver.disconnect()
 			}, "LyricsRendererResizeObserver")
 		}
+
+		return renderer
 	}
 
 	private ReactToLyricsVisibility() {
@@ -248,19 +253,24 @@ export default class CardView implements Giveable {
 		this.Maid.Give(() => visibleHeaderElement.remove(), "VisibleHeaderElement")
 
 		if (isVisible) {
-			this.CreateLyricsRenderer()
+			const renderer = this.CreateLyricsRenderer()
 			this.LyricsContainer.appendChild(this.ExpandedControls.SyncButton)
 			this.Container.appendChild(this.LyricsContainer)
 			// Append credits inside the lyrics container so they scroll with lyrics
 			if (this.CreditsElement) {
 				const lyricsInner = this.LyricsContentContainer.querySelector(".Lyrics")
-				if (lyricsInner) lyricsInner.appendChild(this.CreditsElement)
+				if (lyricsInner) {
+					lyricsInner.appendChild(this.CreditsElement)
+					renderer.Scroller?.UpdateLyricHeights()
+				}
 			}
 		} else {
 			this.ExpandedControls.SyncButton.remove()
 			this.LyricsContainer.remove()
 			if (this.CreditsElement) this.CreditsElement.remove()
 			this.Maid.Clean("LyricsRenderer")
+			this.Maid.Clean("LyricsRendererResizeObserver")
+			this.Maid.Clean("SyncButtonClickListener")
 		}
 	}
 
