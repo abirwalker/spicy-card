@@ -189,6 +189,7 @@ async function init() {
           result.lyrics,
           result.romanizationReady,
           !!loadingCard,
+          result.creditsReady,
         );
       } else {
         existingCard = new NoLyricsCard(cardAnchor);

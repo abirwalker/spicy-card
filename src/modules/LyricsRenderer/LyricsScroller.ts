@@ -57,6 +57,10 @@ export class LyricsScroller<V extends (BaseVocals | SyncedVocals)> implements Gi
 			if (lyricsAreSynced) this.MoveToActiveLyrics()
 		}))
 		resizeObserver.observe(this.ScrollContainer)
+		// Interludes collapse without resizing the viewport, shifting every following line.
+		for (const vocalGroup of this.VocalGroups) {
+			resizeObserver.observe(vocalGroup.GroupContainer)
+		}
 		this.UpdateLyricHeights()
 		this.ForceToTop()
 

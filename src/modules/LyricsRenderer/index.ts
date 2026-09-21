@@ -37,7 +37,7 @@ export default class LyricsRenderer implements Giveable {
 				})
 				lyricsContainer.appendChild(lineContainer)
 			}
-			this.Maid.Give(new LyricsScroller(scrollContainer, lyricsContainer, lines, false))
+			this.Scroller = this.Maid.Give(new LyricsScroller(scrollContainer, lyricsContainer, lines, false))
 		} else {
 			const vocalGroups: VocalGroups<SyncedVocals> = []
 			const vocalGroupStartTimes: number[] = []

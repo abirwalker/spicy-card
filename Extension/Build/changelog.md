@@ -1,5 +1,16 @@
 # Changelog
 
+## [v1.2.2] - 2026-09-21
+
+- Added synced-over-static provider fallback hierarchy: when a provider returns unsynced/static lyrics, Spicy Card holds it and checks all other providers (AMLL, LRCLIB) for synced lyrics before falling back.
+- Added AMLL (Apple Music-like Lyrics) TTML provider support with official endpoint integration.
+- Added translation and romanization tag stripping (`ttm:role="x-translation"` and `x-roman"`) to keep community TTML translations from replacing original song text.
+- Enhanced candidate validation to reject tracks with mismatched artists and divergent durations.
+- Improved search normalization by stripping parenthetical features (`with`, `feat.`) and querying primary artists cleanly.
+- Added strict ISRC normalization and CosmosAsync metadata fallback for reliable track matching.
+- Added native Spotify songwriter credits lookup via GraphQL and CosmosAsync pathfinder fallback.
+- Added LRCLIB search fallback with duration tolerance matching when exact album get returns unsynced lyrics.
+
 ## [v1.2.1] - 2026-09-21
 
 - Moved the scrollbar into the right gutter and corrected thumb sizing so it reaches the bottom with the content.

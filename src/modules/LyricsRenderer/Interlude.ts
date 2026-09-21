@@ -227,7 +227,7 @@ export default class InterludeVisual implements SyncedVocals, Giveable {
 	public Animate(songTimestamp: number, deltaTime: number, isImmediate?: true) {
 		const relativeTime = (songTimestamp - this.StartTime)
 		const timeScale = Clamp((relativeTime / this.Duration), 0, 1)
-		const pastStart = (relativeTime >= 0), beforeEnd = (relativeTime <= this.Duration)
+		const pastStart = (relativeTime >= 0), beforeEnd = (relativeTime < this.Duration)
 		const isActive = (pastStart && beforeEnd)
 		const stateNow = isActive ? "Active" : pastStart ? "Sung" : "Idle"
 		const stateChanged = (stateNow != this.State)
@@ -236,7 +236,8 @@ export default class InterludeVisual implements SyncedVocals, Giveable {
 		if (stateChanged) {
 			const oldState = this.State
 			this.State = stateNow
-			if (this.State !== "Sung") this.EvaluateClassState()
+			// Release the row at the timestamp boundary, before fading springs can rebound.
+			this.EvaluateClassState()
 			if (oldState === "Active") this.ActivityChangedSignal.Fire(false)
 			else if (isActive) this.ActivityChangedSignal.Fire(true)
 		}

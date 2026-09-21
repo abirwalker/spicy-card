@@ -73,10 +73,10 @@ export default class CardView implements Giveable {
 	private readonly RomanizeTooltip: any
 	private readonly LyricsContainer: HTMLDivElement
 	private readonly LyricsContentContainer: HTMLDivElement
-	private readonly CreditsElement: HTMLDivElement | null
+	private CreditsElement: HTMLDivElement | null
 	private readonly TransformedLyrics: TransformedLyrics
 
-	constructor(insertAfter: HTMLDivElement, transformedLyrics: TransformedLyrics, romanizationReady: Promise<void> = Promise.resolve(), skipAnimation: boolean = false) {
+	constructor(insertAfter: HTMLDivElement, transformedLyrics: TransformedLyrics, romanizationReady: Promise<void> = Promise.resolve(), skipAnimation: boolean = false, creditsReady: Promise<void> = Promise.resolve()) {
 		this.TransformedLyrics = transformedLyrics
 
 		{
@@ -175,6 +175,9 @@ export default class CardView implements Giveable {
 		this.ForceButtonStyles()
 		this.ReactToLyricsVisibility()
 		insertAfter.after(this.Container)
+		void creditsReady.then(() => {
+			if (!this.Maid.IsDestroyed()) this.AttachCredits()
+		})
 	}
 
 	private ForceButtonStyles() {
@@ -243,7 +246,22 @@ export default class CardView implements Giveable {
 			}, "LyricsRendererResizeObserver")
 		}
 
+		this.AttachCredits()
 		return renderer
+	}
+
+	private AttachCredits() {
+		const writers = this.TransformedLyrics.SongWriters
+		if (!writers?.length) return
+		if (!this.CreditsElement) {
+			this.CreditsElement = this.Maid.Give(CreateElement<HTMLDivElement>(CreditsContainer))
+		}
+		this.CreditsElement.textContent = `Written by: ${writers.join(", ")}`
+		const lyricsInner = this.LyricsContentContainer.querySelector('.Lyrics')
+		if (lyricsInner) {
+			lyricsInner.appendChild(this.CreditsElement)
+			this.Maid.Get<LyricsRenderer>('LyricsRenderer')?.Scroller?.UpdateLyricHeights()
+		}
 	}
 
 	private ReactToLyricsVisibility() {
@@ -253,17 +271,9 @@ export default class CardView implements Giveable {
 		this.Maid.Give(() => visibleHeaderElement.remove(), "VisibleHeaderElement")
 
 		if (isVisible) {
-			const renderer = this.CreateLyricsRenderer()
+			this.CreateLyricsRenderer()
 			this.LyricsContainer.appendChild(this.ExpandedControls.SyncButton)
 			this.Container.appendChild(this.LyricsContainer)
-			// Append credits inside the lyrics container so they scroll with lyrics
-			if (this.CreditsElement) {
-				const lyricsInner = this.LyricsContentContainer.querySelector(".Lyrics")
-				if (lyricsInner) {
-					lyricsInner.appendChild(this.CreditsElement)
-					renderer.Scroller?.UpdateLyricHeights()
-				}
-			}
 		} else {
 			this.ExpandedControls.SyncButton.remove()
 			this.LyricsContainer.remove()
