@@ -19,8 +19,13 @@ document.head.appendChild(fontLink);
 // DOM selectors
 const CardInsertAnchor = ".main-nowPlayingView-nowPlayingWidget";
 const CardInsertAnchorFallback = ".main-nowPlayingView-coverArtContainer";
-const SpotifyCardViewQuery =
-  ".main-nowPlayingView-section:not(:is(#SpicyCard-CardView)):has(.main-nowPlayingView-lyricsTitle)";
+// Spotify has changed the native lyrics markup more than once. The test ID is
+// present on the current NPV preview, while the class selector keeps support
+// for older Spotify builds.
+const SpotifyCardViewQuery = [
+  '[data-testid="lyrics-npv-section"]',
+  '.main-nowPlayingView-section:not(#SpicyCard-CardView):has(.main-nowPlayingView-lyricsTitle)'
+].join(", ");
 
 const LoadingLyricsCard = `<div class="LoadingLyricsCard Loading"></div>`;
 // Self-healing observeElement pattern (inspired by Lucid Lyrics, Thanks hehe)
@@ -113,7 +118,7 @@ async function init() {
     const CheckForNativeLyricsCard = () => {
       const nativeCard =
         cardContainer.querySelector<HTMLDivElement>(SpotifyCardViewQuery);
-      if (nativeCard !== null) nativeCard.style.display = "none";
+      if (nativeCard !== null) nativeCard.style.setProperty("display", "none", "important");
     };
     CheckForNativeLyricsCard();
     const nativeObserver = new MutationObserver(CheckForNativeLyricsCard);

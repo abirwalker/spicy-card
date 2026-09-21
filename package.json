@@ -1,7 +1,7 @@
 {
   "name": "spicy-card",
   "author": "abirwalker",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "license": "MIT",
   "description": "Beautiful Lyrics card view powered by open-source BiniLyrics",
   "scripts": {

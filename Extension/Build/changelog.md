@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.2.3] - 2026-09-21
+
+- Hidden Spotify's native NPV lyrics preview when Spicy Card is active, including the current `lyrics-npv-section` markup.
+
 ## [v1.2.2] - 2026-09-21
 
 - Added synced-over-static provider fallback hierarchy: when a provider returns unsynced/static lyrics, Spicy Card holds it and checks all other providers (AMLL, LRCLIB) for synced lyrics before falling back.
