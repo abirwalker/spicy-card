@@ -61,7 +61,7 @@ const CreditsContainer = `<div class="Credits"></div>`
 
 export default class CardView implements Giveable {
 	private readonly Maid = new Maid()
-	private readonly Container: HTMLDivElement
+	public readonly Container: HTMLDivElement
 	private readonly Header: HTMLDivElement
 	private readonly ShowLyricsButton: HTMLButtonElement
 	private readonly ExpandedControls: {
@@ -76,7 +76,7 @@ export default class CardView implements Giveable {
 	private CreditsElement: HTMLDivElement | null
 	private readonly TransformedLyrics: TransformedLyrics
 
-	constructor(insertAfter: HTMLDivElement, transformedLyrics: TransformedLyrics, romanizationReady: Promise<void> = Promise.resolve(), skipAnimation: boolean = false, creditsReady: Promise<void> = Promise.resolve()) {
+	constructor(insertAfter: HTMLElement | null = null, transformedLyrics: TransformedLyrics, romanizationReady: Promise<void> = Promise.resolve(), skipAnimation: boolean = false, creditsReady: Promise<void> = Promise.resolve()) {
 		this.TransformedLyrics = transformedLyrics
 
 		{
@@ -174,7 +174,9 @@ export default class CardView implements Giveable {
 		// Force reset button styles that Spotify's global CSS overrides
 		this.ForceButtonStyles()
 		this.ReactToLyricsVisibility()
-		insertAfter.after(this.Container)
+		if (insertAfter) {
+			insertAfter.after(this.Container)
+		}
 		void creditsReady.then(() => {
 			if (!this.Maid.IsDestroyed()) this.AttachCredits()
 		})

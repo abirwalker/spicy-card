@@ -1,3 +1,10 @@
+// Suppress Spotify's native lyrics card across all Spotify client layouts
+[data-testid="lyrics-npv-section"],
+.main-nowPlayingView-section:not(#SpicyCard-CardView):has(.main-nowPlayingView-lyricsTitle),
+:is(aside.NowPlayingView, aside#Desktop_PanelContainer_Id) [data-testid="lyrics-npv-section"] {
+	display: none !important;
+}
+
 .LoadingLyricsCard {
 	--skel-bar-color: rgba(var(--spice-rgb-shadow, 0, 0, 0), 0.14);
 	--skel-shimmer-color: rgba(var(--spice-rgb-shadow, 0, 0, 0), 0.12);

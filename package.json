@@ -18,6 +18,9 @@
   "devDependencies": {
     "@spicemod/creator": "^0.0.35",
     "@types/d3-ease": "^3.0.2",
+    "@types/lodash": "^4.17.26",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "typescript": "^5.0.0"
   }
 }
