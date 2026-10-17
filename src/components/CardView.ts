@@ -76,7 +76,13 @@ export default class CardView implements Giveable {
 	private CreditsElement: HTMLDivElement | null
 	private readonly TransformedLyrics: TransformedLyrics
 
-	constructor(insertAfter: HTMLElement | null = null, transformedLyrics: TransformedLyrics, romanizationReady: Promise<void> = Promise.resolve(), skipAnimation: boolean = false, creditsReady: Promise<void> = Promise.resolve()) {
+	constructor(
+		transformedLyrics: TransformedLyrics,
+		romanizationReady: Promise<void> = Promise.resolve(),
+		skipAnimation: boolean = false,
+		creditsReady: Promise<void> = Promise.resolve(),
+		insertAfter?: HTMLElement | null
+	) {
 		this.TransformedLyrics = transformedLyrics
 
 		{

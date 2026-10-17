@@ -67,7 +67,7 @@ export function cleanupLyricsCache(): void {
 						continue;
 					}
 					const entry: CacheEntry = JSON.parse(raw);
-					if (!entry || typeof entry.fetchedAt !== "number" || now - entry.fetchedAt > TTL_MS) {
+					if (!entry || typeof entry.fetchedAt !== "number" || isNaN(entry.fetchedAt) || now - entry.fetchedAt > TTL_MS) {
 						localStorage.removeItem(key);
 						const trackId = key.slice(CACHE_PREFIX.length);
 						memoryCache.delete(trackId);
@@ -101,7 +101,7 @@ function storageGet(trackId: string): CacheEntry | null {
 		const raw = localStorage.getItem(key);
 		if (!raw) return null;
 		const entry: CacheEntry = JSON.parse(raw);
-		if (Date.now() - entry.fetchedAt > TTL_MS) {
+		if (!entry || typeof entry.fetchedAt !== "number" || isNaN(entry.fetchedAt) || Date.now() - entry.fetchedAt > TTL_MS) {
 			localStorage.removeItem(key);
 			return null;
 		}
@@ -117,14 +117,17 @@ function storageGet(trackId: string): CacheEntry | null {
 function storageSet(trackId: string, entry: CacheEntry): void {
 	const key = CACHE_PREFIX + trackId;
 	try {
-		// Proactively enforce cap so long listening sessions don't grow unbounded
-		let v2KeyCount = 0;
-		for (let i = 0; i < localStorage.length; i++) {
-			const k = localStorage.key(i);
-			if (k && k.startsWith(CACHE_PREFIX)) v2KeyCount++;
-		}
-		if (v2KeyCount >= MAX_CACHE_ENTRIES) {
-			pruneOldestEntries(Math.max(1, v2KeyCount - MAX_CACHE_ENTRIES + 1));
+		// Only check capacity when creating a new key, not on update
+		const isNewKey = localStorage.getItem(key) === null;
+		if (isNewKey) {
+			let v2KeyCount = 0;
+			for (let i = 0; i < localStorage.length; i++) {
+				const k = localStorage.key(i);
+				if (k && k.startsWith(CACHE_PREFIX)) v2KeyCount++;
+			}
+			if (v2KeyCount >= MAX_CACHE_ENTRIES) {
+				pruneOldestEntries(Math.max(1, v2KeyCount - MAX_CACHE_ENTRIES + 1));
+			}
 		}
 
 		localStorage.setItem(key, JSON.stringify(entry));
@@ -144,13 +147,16 @@ function storageSet(trackId: string, entry: CacheEntry): void {
 export function getLyricsFromCache(trackId: string): any | undefined {
 	const now = Date.now();
 
-	// Tier 1: In-memory with TTL check
+	// Tier 1: In-memory with TTL check and LRU order refresh
 	const mem = memoryCache.get(trackId);
 	if (mem) {
-		if (now - mem.fetchedAt > TTL_MS) {
+		if (typeof mem.fetchedAt !== "number" || isNaN(mem.fetchedAt) || now - mem.fetchedAt > TTL_MS) {
 			memoryCache.delete(trackId);
 			localStorage.removeItem(CACHE_PREFIX + trackId);
 		} else {
+			// Re-insert to keep Map in LRU order
+			memoryCache.delete(trackId);
+			memoryCache.set(trackId, mem);
 			return mem.data;
 		}
 	}
@@ -172,6 +178,7 @@ export function getLyricsFromCache(trackId: string): any | undefined {
 
 export function setLyricsCache(trackId: string, data: any): void {
 	const entry: CacheEntry = { data, fetchedAt: Date.now() };
+	memoryCache.delete(trackId);
 	memoryCache.set(trackId, entry);
 	if (memoryCache.size > MAX_CACHE_ENTRIES) {
 		const oldestKey = memoryCache.keys().next().value;
@@ -182,6 +189,7 @@ export function setLyricsCache(trackId: string, data: any): void {
 
 export function setLyricsCacheNegative(trackId: string): void {
 	const entry: CacheEntry = { data: null, fetchedAt: Date.now() };
+	memoryCache.delete(trackId);
 	memoryCache.set(trackId, entry);
 	if (memoryCache.size > MAX_CACHE_ENTRIES) {
 		const oldestKey = memoryCache.keys().next().value;

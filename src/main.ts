@@ -53,22 +53,15 @@ function insertCard(npv: HTMLElement, el: HTMLElement): boolean {
   // Mode 1: Modern Spotify with test IDs
   const modernContent = npv.querySelector('[data-testid="NPV_Panel_OpenDiv"]');
   if (modernContent) {
-    const nativeLyrics = modernContent.querySelector('[data-testid="lyrics-npv-section"]');
-    if (nativeLyrics?.parentElement === modernContent) {
-      if (el.parentElement !== modernContent || el.nextElementSibling !== nativeLyrics) {
-        nativeLyrics.insertAdjacentElement("beforebegin", el);
-      }
-    } else {
-      const artwork = modernContent.querySelector(
-        '[data-testid="track-visual-enhancement"], .main-nowPlayingView-coverArtContainer, [data-testid="cover-art-slot"]'
-      );
-      let section: Element | null = artwork;
-      while (section && section.parentElement !== modernContent) section = section.parentElement;
-      if (section) {
-        if (section.nextElementSibling !== el) section.insertAdjacentElement("afterend", el);
-      } else if (modernContent.firstElementChild !== el) {
-        modernContent.prepend(el);
-      }
+    const artwork = modernContent.querySelector(
+      `${NPV_COVER_MARKERS}, [data-testid="track-visual-enhancement"], .main-nowPlayingView-coverArtContainer`
+    );
+    let section: Element | null = artwork;
+    while (section && section.parentElement !== modernContent) section = section.parentElement;
+    if (section) {
+      if (section.nextElementSibling !== el) section.insertAdjacentElement("afterend", el);
+    } else if (modernContent.firstElementChild !== el) {
+      modernContent.prepend(el);
     }
     return true;
   }
@@ -76,13 +69,14 @@ function insertCard(npv: HTMLElement, el: HTMLElement): boolean {
   // Mode 2: Modern Spotify 1.3.3+ (Canvas / cover-art-slot)
   const coverMarker = npv.querySelector(NPV_COVER_MARKERS);
   if (coverMarker) {
-    const nativeLyrics = npv.querySelector('[data-testid="lyrics-npv-section"]');
-    if (nativeLyrics) {
-      if (el.nextElementSibling !== nativeLyrics) nativeLyrics.insertAdjacentElement("beforebegin", el);
-      return true;
-    }
     let coverBlock: Element = coverMarker;
-    while (coverBlock.parentElement && coverBlock.parentElement !== npv && coverBlock.parentElement.children.length < 2) {
+    while (
+      coverBlock.parentElement &&
+      coverBlock.parentElement !== npv &&
+      !coverBlock.parentElement.matches?.(".main-nowPlayingView-content, [data-testid='NPV_Panel_OpenDiv']") &&
+      coverBlock.parentElement.parentElement !== null &&
+      coverBlock.parentElement.parentElement !== npv
+    ) {
       coverBlock = coverBlock.parentElement;
     }
     let info = coverBlock.nextElementSibling;
@@ -97,8 +91,8 @@ function insertCard(npv: HTMLElement, el: HTMLElement): boolean {
       infoBlocks.find((child) => child.textContent?.trim());
     if (title) {
       if (title.nextElementSibling !== el) title.insertAdjacentElement("afterend", el);
-    } else if (info.firstElementChild !== el) {
-      info.prepend(el);
+    } else if (info.nextElementSibling !== el) {
+      info.insertAdjacentElement("afterend", el);
     }
     return true;
   }
@@ -138,7 +132,17 @@ function hideNativeLyrics(npv: HTMLElement): void {
   });
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+function waitForSpicetify(): Promise<void> {
+  return new Promise((resolve) => {
+    const interval = setInterval(() => {
+      if (Spicetify?.Player?.data && Spicetify?.CosmosAsync) {
+        clearInterval(interval);
+        resolve();
+      }
+    }, 100);
+  });
+}
+
 const getCurrentTrackId = (): string | null => {
   const uri = Spicetify.Player.data?.item?.uri;
   if (!uri || !uri.startsWith("spotify:track:")) return null;
@@ -151,63 +155,51 @@ const isStreamedTrack = (): boolean => {
   const type = item.type;
   const provider = (item as any).provider ?? "";
   if (type === "unknown" && provider.startsWith("narration")) return false;
-  if (type !== "track") return false;
-  if ((item.metadata as any)?.is_local === "true") return false;
-  return true;
+  return type === "track" || (type === "unknown" && provider === "");
 };
 
-const waitForSpicetify = (): Promise<void> => {
-  return new Promise((resolve) => {
-    const check = () => {
-      if (window.Spicetify?.Player) {
-        resolve();
-      } else {
-        setTimeout(check, 50);
-      }
-    };
-    check();
-  });
-};
-
-// ─── Init & Card Lifecycle ───────────────────────────────────────────────────
 let existingCard: CardView | NoLyricsCard | null = null;
 let activeLoadingCard: HTMLDivElement | null = null;
 
 function getActiveCardEl(): HTMLElement | null {
-  return activeLoadingCard ?? existingCard?.Container ?? null;
+  return (existingCard?.Container as HTMLElement | undefined) ?? activeLoadingCard ?? null;
 }
 
 function mountActiveCard(): void {
   const npv = GetNPVElement();
-  if (!npv || !isNPVVisible(npv)) {
-    getActiveCardEl()?.remove();
-    return;
-  }
+  if (!npv) return;
   hideNativeLyrics(npv);
+  if (!isNPVVisible(npv)) return;
+
   const cardEl = getActiveCardEl();
-  if (cardEl) {
-    insertCard(npv, cardEl);
-  }
+  if (!cardEl) return;
+  insertCard(npv, cardEl);
 }
 
 let observedSidebar: Element | null = null;
 let sidebarObserver: MutationObserver | null = null;
 
 function attachSidebarObserver(): void {
-  const sidebar = GetNPVObserverRoot();
-  if (!sidebar || sidebar === observedSidebar) return;
   sidebarObserver?.disconnect();
+  sidebarObserver = null;
+
+  const sidebar = GetNPVObserverRoot();
+  if (!sidebar) {
+    observedSidebar = null;
+    return;
+  }
 
   sidebarObserver = new MutationObserver((records) => {
     const cardEl = getActiveCardEl();
-    // Ignore mutations originating entirely from inside our own card element (lyrics animation/scroll)
-    const isInternalMutation = records.every((record) => {
-      const target = record.target;
-      return cardEl !== null && (target === cardEl || cardEl.contains(target));
-    });
-    if (isInternalMutation) return;
+    if (records.every((record) => cardEl !== null && cardEl.contains(record.target))) return;
 
-    mountActiveCard();
+    const npv = GetNPVElement();
+    if (npv) {
+      hideNativeLyrics(npv);
+      if (isNPVVisible(npv) && cardEl && !npv.contains(cardEl)) {
+        mountActiveCard();
+      }
+    }
   });
 
   sidebarObserver.observe(sidebar, {
@@ -230,11 +222,6 @@ function attachWatchers(): void {
   const watchRoot = topContainer ?? document.querySelector(".Root") ?? document.body;
 
   const topObserver = new MutationObserver((records) => {
-    if (observedSidebar === null || !observedSidebar.isConnected) {
-      observedSidebar = null;
-      attachSidebarObserver();
-      return;
-    }
     const cardEl = getActiveCardEl();
     if (records.every((record) => cardEl !== null && cardEl.contains(record.target))) return;
 
@@ -247,7 +234,7 @@ function attachWatchers(): void {
       )
     );
 
-    if (panelChanged || !observedSidebar.isConnected) {
+    if (panelChanged || (observedSidebar !== null && !observedSidebar.isConnected)) {
       observedSidebar = null;
       attachSidebarObserver();
     }
@@ -260,11 +247,10 @@ let currentFetchId = 0;
 let lastFetchedTrackId: string | null = null;
 
 async function onSongChange(): Promise<void> {
-  const trackId = getCurrentTrackId();
-  if (trackId && trackId === lastFetchedTrackId) return;
+  const initialTrackId = getCurrentTrackId();
+  if (initialTrackId && initialTrackId === lastFetchedTrackId) return;
 
   const fetchId = ++currentFetchId;
-  lastFetchedTrackId = null;
 
   // Clean previous card and loading skeleton
   activeLoadingCard?.remove();
@@ -274,13 +260,7 @@ async function onSongChange(): Promise<void> {
 
   ResetRomanization();
 
-  if (!isStreamedTrack()) {
-    existingCard = new NoLyricsCard();
-    mountActiveCard();
-    return;
-  }
-
-  let fetchTrackId = trackId;
+  let fetchTrackId = initialTrackId;
   if (!fetchTrackId) {
     await new Promise<void>((resolve) => {
       const interval = setInterval(() => {
@@ -297,6 +277,14 @@ async function onSongChange(): Promise<void> {
     });
   }
   if (!fetchTrackId || fetchId !== currentFetchId) return;
+
+  // Check if track is a streamed track once player data is populated
+  if (!isStreamedTrack()) {
+    lastFetchedTrackId = fetchTrackId;
+    existingCard = new NoLyricsCard();
+    mountActiveCard();
+    return;
+  }
 
   const cached = getLyricsFromCache(fetchTrackId);
   const isCacheHit = cached !== undefined;
@@ -317,10 +305,10 @@ async function onSongChange(): Promise<void> {
 
   if (fetchId !== currentFetchId) return;
 
+  lastFetchedTrackId = fetchTrackId;
+
   if (result) {
-    lastFetchedTrackId = fetchTrackId;
     existingCard = new CardView(
-      null,
       result.lyrics,
       result.romanizationReady,
       !!loadingCard,
