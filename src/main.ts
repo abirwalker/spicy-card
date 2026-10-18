@@ -53,15 +53,22 @@ function insertCard(npv: HTMLElement, el: HTMLElement): boolean {
   // Mode 1: Modern Spotify with test IDs
   const modernContent = npv.querySelector('[data-testid="NPV_Panel_OpenDiv"]');
   if (modernContent) {
-    const artwork = modernContent.querySelector(
-      `${NPV_COVER_MARKERS}, [data-testid="track-visual-enhancement"], .main-nowPlayingView-coverArtContainer`
-    );
-    let section: Element | null = artwork;
-    while (section && section.parentElement !== modernContent) section = section.parentElement;
-    if (section) {
-      if (section.nextElementSibling !== el) section.insertAdjacentElement("afterend", el);
-    } else if (modernContent.firstElementChild !== el) {
-      modernContent.prepend(el);
+    const nativeLyrics = modernContent.querySelector('[data-testid="lyrics-npv-section"]');
+    if (nativeLyrics?.parentElement === modernContent) {
+      if (el.parentElement !== modernContent || el.nextElementSibling !== nativeLyrics) {
+        nativeLyrics.insertAdjacentElement("beforebegin", el);
+      }
+    } else {
+      const artwork = modernContent.querySelector(
+        `${NPV_COVER_MARKERS}, [data-testid="track-visual-enhancement"], .main-nowPlayingView-coverArtContainer`
+      );
+      let section: Element | null = artwork;
+      while (section && section.parentElement !== modernContent) section = section.parentElement;
+      if (section) {
+        if (section.nextElementSibling !== el) section.insertAdjacentElement("afterend", el);
+      } else if (modernContent.firstElementChild !== el) {
+        modernContent.prepend(el);
+      }
     }
     return true;
   }
@@ -69,14 +76,14 @@ function insertCard(npv: HTMLElement, el: HTMLElement): boolean {
   // Mode 2: Modern Spotify 1.3.3+ (Canvas / cover-art-slot)
   const coverMarker = npv.querySelector(NPV_COVER_MARKERS);
   if (coverMarker) {
+    const nativeLyrics = npv.querySelector('[data-testid="lyrics-npv-section"]');
+    if (nativeLyrics) {
+      if (el.nextElementSibling !== nativeLyrics) nativeLyrics.insertAdjacentElement("beforebegin", el);
+      return true;
+    }
+
     let coverBlock: Element = coverMarker;
-    while (
-      coverBlock.parentElement &&
-      coverBlock.parentElement !== npv &&
-      !coverBlock.parentElement.matches?.(".main-nowPlayingView-content, [data-testid='NPV_Panel_OpenDiv']") &&
-      coverBlock.parentElement.parentElement !== null &&
-      coverBlock.parentElement.parentElement !== npv
-    ) {
+    while (coverBlock.parentElement && coverBlock.parentElement !== npv && coverBlock.parentElement.children.length < 2) {
       coverBlock = coverBlock.parentElement;
     }
     let info = coverBlock.nextElementSibling;
@@ -91,8 +98,8 @@ function insertCard(npv: HTMLElement, el: HTMLElement): boolean {
       infoBlocks.find((child) => child.textContent?.trim());
     if (title) {
       if (title.nextElementSibling !== el) title.insertAdjacentElement("afterend", el);
-    } else if (info.nextElementSibling !== el) {
-      info.insertAdjacentElement("afterend", el);
+    } else if (info.firstElementChild !== el) {
+      info.prepend(el);
     }
     return true;
   }
@@ -180,14 +187,9 @@ let observedSidebar: Element | null = null;
 let sidebarObserver: MutationObserver | null = null;
 
 function attachSidebarObserver(): void {
-  sidebarObserver?.disconnect();
-  sidebarObserver = null;
-
   const sidebar = GetNPVObserverRoot();
-  if (!sidebar) {
-    observedSidebar = null;
-    return;
-  }
+  if (!sidebar || sidebar === observedSidebar) return;
+  sidebarObserver?.disconnect();
 
   sidebarObserver = new MutationObserver((records) => {
     const cardEl = getActiveCardEl();
@@ -196,7 +198,7 @@ function attachSidebarObserver(): void {
     const npv = GetNPVElement();
     if (npv) {
       hideNativeLyrics(npv);
-      if (isNPVVisible(npv) && cardEl && !npv.contains(cardEl)) {
+      if (isNPVVisible(npv) && cardEl) {
         mountActiveCard();
       }
     }
@@ -221,7 +223,18 @@ function attachWatchers(): void {
     null;
   const watchRoot = topContainer ?? document.querySelector(".Root") ?? document.body;
 
+  let watchingSubtree = false;
+  const observeTop = () => {
+    watchingSubtree = topContainer === null || observedSidebar === null;
+    topObserver.observe(watchRoot, { childList: true, subtree: watchingSubtree });
+  };
+
   const topObserver = new MutationObserver((records) => {
+    if (observedSidebar === null) {
+      attachSidebarObserver();
+      if (observedSidebar !== null && watchingSubtree && topContainer !== null) observeTop();
+      return;
+    }
     const cardEl = getActiveCardEl();
     if (records.every((record) => cardEl !== null && cardEl.contains(record.target))) return;
 
@@ -234,13 +247,14 @@ function attachWatchers(): void {
       )
     );
 
-    if (panelChanged || (observedSidebar !== null && !observedSidebar.isConnected)) {
+    if (!observedSidebar || !observedSidebar.isConnected || panelChanged) {
       observedSidebar = null;
       attachSidebarObserver();
+      if (observedSidebar === null && !watchingSubtree) observeTop();
     }
   });
 
-  topObserver.observe(watchRoot, { childList: true, subtree: true });
+  observeTop();
 }
 
 let currentFetchId = 0;
