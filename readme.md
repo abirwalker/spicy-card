@@ -2,8 +2,9 @@
 
 A Spicetify extension that brings a synced lyrics card view right into Spotify's sidebar. Originally built around ~~[Spicy Lyrics](https://github.com/Spikerko/spicy-lyrics)~~, now powered by the open-source [BiniLyrics](https://lyrics-api.binimum.org) API and [LRCLIB](https://lrclib.net), with syllable-synced animations inspired by [Beautiful Lyrics](https://github.com/surfbryce/beautiful-lyrics) by SoCalifornian.
 
-> [!NOTE]
-> **Project Status**: Spicy Card is in maintenance mode. Active development has shifted to **Vivid Lyrics**.
+> [!TIP]
+> **Looking for the best synced lyrics experience?**  
+> Spicy Card is in maintenance mode. For the latest features, active development, smoother rendering, and full customization, please give **[Liquid Lyrics](https://github.com/abirwalker/liquid-lyrics)** a try!
 
 ## Preview
 
@@ -70,5 +71,3 @@ with fallback to [LRCLIB](https://lrclib.net).
 ## License
 
 Source code is made available under the terms of the MIT License.
-
-

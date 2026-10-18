@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.2.4] - 2026-10-18
+
+- Resolved Spotify localStorage quota exhaustion (QuotaExceededError) that caused blank white screens on startup (closes #2).
+- Added automatic startup cache cleanup with 7-day TTL expiration and 150-entry LRU cap.
+- Restored Now Playing View (NPV) lyrics card placement and reactive observer lifecycle for modern Spotify desktop layouts (1.3.x+).
+- Suppressed native Spotify lyrics preview section to avoid duplicated or overlapping widgets.
+- Updated project recommendation in documentation to Liquid Lyrics.
+
 ## [v1.2.3] - 2026-09-21
 
 - Hidden Spotify's native NPV lyrics preview when Spicy Card is active, including the current `lyrics-npv-section` markup.
